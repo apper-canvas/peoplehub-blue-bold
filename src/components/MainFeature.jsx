@@ -212,6 +212,23 @@ const MainFeature = () => {
     }
   }
 
+  const calculateTotalHours = (checkIn, checkOut) => {
+    if (!checkIn) return 'N/A'
+    if (!checkOut) return 'In Progress'
+    
+    const [inHours, inMinutes] = checkIn.split(':').map(Number)
+    const [outHours, outMinutes] = checkOut.split(':').map(Number)
+    
+    const inTotalMinutes = inHours * 60 + inMinutes
+    const outTotalMinutes = outHours * 60 + outMinutes
+    
+    const diffMinutes = outTotalMinutes - inTotalMinutes
+    const hours = Math.floor(diffMinutes / 60)
+    const minutes = diffMinutes % 60
+    
+    return `${hours}h ${minutes}m`
+  }
+
   const renderEmployees = () => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -490,8 +507,15 @@ const MainFeature = () => {
                   <span className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-medium">
                     {record.status}
                   </span>
-                  <div className="text-surface-600 dark:text-surface-300 text-sm">
+                  <div className="text-surface-600 dark:text-surface-300 text-sm space-y-1">
                     In: {record.checkIn} {record.checkOut && `• Out: ${record.checkOut}`}
+                  </div>
+                  <div className="text-surface-700 dark:text-surface-200 text-sm font-medium">
+                    <span className="text-xs text-surface-500 dark:text-surface-400">Total Hours: </span>
+                    <span className={`${calculateTotalHours(record.checkIn, record.checkOut) === 'In Progress' 
+                      ? 'text-blue-600 dark:text-blue-400' : 'text-surface-900 dark:text-white'}`}>
+                      {calculateTotalHours(record.checkIn, record.checkOut)}
+                    </span>
                   </div>
                 </div>
               </div>
