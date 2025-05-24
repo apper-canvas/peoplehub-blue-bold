@@ -96,6 +96,9 @@ const MainFeature = () => {
   })
 
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showAttendanceMarking, setShowAttendanceMarking] = useState(false)
+  const [selectedEmployees, setSelectedEmployees] = useState([])
+  const [bulkAttendanceStatus, setBulkAttendanceStatus] = useState('Present')
 
   const tabs = [
     { id: 'employees', label: 'Employees', icon: 'Users', count: employees.length },
@@ -137,6 +140,87 @@ const MainFeature = () => {
     })
     setShowAddForm(false)
     toast.success('Employee added successfully!')
+  }
+
+  const handleBulkAttendanceMarking = () => {
+    if (selectedEmployees.length === 0) {
+      toast.error('Please select at least one employee')
+      return
+    }
+
+    const today = format(new Date(), 'yyyy-MM-dd')
+    const currentTime = format(new Date(), 'HH:mm')
+    
+    selectedEmployees.forEach(employeeId => {
+      const existingRecordIndex = attendance.findIndex(a => a.employeeId === employeeId && a.date === today)
+      
+      if (existingRecordIndex !== -1) {
+        // Update existing record
+        const updatedAttendance = [...attendance]
+        updatedAttendance[existingRecordIndex] = {
+          ...updatedAttendance[existingRecordIndex],
+          status: bulkAttendanceStatus,
+          checkIn: bulkAttendanceStatus !== 'Absent' ? (updatedAttendance[existingRecordIndex].checkIn || currentTime) : '',
+          checkOut: bulkAttendanceStatus === 'Absent' ? '' : updatedAttendance[existingRecordIndex].checkOut
+        }
+        setAttendance(updatedAttendance)
+      } else {
+        // Create new record
+        const newAttendance = {
+          id: (attendance.length + Math.random()).toString(),
+          employeeId,
+          date: today,
+          status: bulkAttendanceStatus,
+          checkIn: bulkAttendanceStatus !== 'Absent' ? currentTime : '',
+          checkOut: ''
+        }
+        setAttendance(prev => [...prev, newAttendance])
+      }
+    })
+
+    toast.success(`Marked ${selectedEmployees.length} employee(s) as ${bulkAttendanceStatus}`)
+    setSelectedEmployees([])
+    setShowAttendanceMarking(false)
+  }
+
+  const handleEmployeeSelection = (employeeId) => {
+    setSelectedEmployees(prev => 
+      prev.includes(employeeId) 
+        ? prev.filter(id => id !== employeeId)
+        : [...prev, employeeId]
+    )
+  }
+
+  const markIndividualAttendance = (employeeId, status) => {
+    const today = format(new Date(), 'yyyy-MM-dd')
+    const currentTime = format(new Date(), 'HH:mm')
+    const existingRecordIndex = attendance.findIndex(a => a.employeeId === employeeId && a.date === today)
+    
+    if (existingRecordIndex !== -1) {
+      // Update existing record
+      const updatedAttendance = [...attendance]
+      updatedAttendance[existingRecordIndex] = {
+        ...updatedAttendance[existingRecordIndex],
+        status: status,
+        checkIn: status !== 'Absent' ? (updatedAttendance[existingRecordIndex].checkIn || currentTime) : '',
+        checkOut: status === 'Absent' ? '' : updatedAttendance[existingRecordIndex].checkOut
+      }
+      setAttendance(updatedAttendance)
+    } else {
+      // Create new record
+      const newAttendance = {
+        id: (attendance.length + Math.random()).toString(),
+        employeeId,
+        date: today,
+        status: status,
+        checkIn: status !== 'Absent' ? currentTime : '',
+        checkOut: ''
+      }
+      setAttendance(prev => [...prev, newAttendance])
+    }
+
+    const employee = employees.find(emp => emp.id === employeeId)
+    toast.success(`${employee?.firstName} ${employee?.lastName} marked as ${status}`)
   }
 
   const getEmployeePerformanceAvg = (employeeId) => {
@@ -209,6 +293,14 @@ const MainFeature = () => {
       isSignedIn: !latestRecord.checkOut,
       signInTime: latestRecord.checkIn
     }
+  }
+
+  const getTodayAttendanceStatus = (employeeId) => {
+    const today = format(new Date(), 'yyyy-MM-dd')
+    const todayRecord = attendance.find(a => a.employeeId === employeeId && a.date === today)
+    
+    if (!todayRecord) return 'Not Marked'
+    return todayRecord.status
   }
 
   const calculateTotalHours = (checkIn, checkOut) => {
@@ -474,8 +566,135 @@ const MainFeature = () => {
       transition={{ duration: 0.5 }}
       className="space-y-4"
     >
-      <h3 className="text-lg lg:text-xl font-semibold text-surface-900 dark:text-white mb-6">
-        Attendance Tracking
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h3 className="text-lg lg:text-xl font-semibold text-surface-900 dark:text-white">
+          Attendance Tracking
+        </h3>
+        <button
+          onClick={() => setShowAttendanceMarking(!showAttendanceMarking)}
+          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-secondary to-secondary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 text-sm lg:text-base"
+        >
+          <ApperIcon name="CheckSquare" className="h-4 w-4 mr-2" />
+          Mark Attendance
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {showAttendanceMarking && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-white/50 dark:bg-surface-800/50 backdrop-blur-sm rounded-xl p-4 lg:p-6 border border-surface-200/50 dark:border-surface-700/50 mb-6"
+          >
+            <h4 className="text-lg font-semibold text-surface-900 dark:text-white mb-4">
+              Today's Attendance - {format(new Date(), 'MMM dd, yyyy')}
+            </h4>
+            
+            {/* Bulk Actions */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 p-4 bg-surface-50 dark:bg-surface-700/50 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium text-surface-700 dark:text-surface-300">
+                  Bulk Actions:
+                </span>
+                <select
+                  value={bulkAttendanceStatus}
+                  onChange={(e) => setBulkAttendanceStatus(e.target.value)}
+                  className="px-3 py-1 bg-white dark:bg-surface-700 border border-surface-300 dark:border-surface-600 rounded text-sm"
+                >
+                  <option value="Present">Present</option>
+                  <option value="Absent">Absent</option>
+                  <option value="Late">Late</option>
+                </select>
+                <button
+                  onClick={handleBulkAttendanceMarking}
+                  disabled={selectedEmployees.length === 0}
+                  className="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Apply ({selectedEmployees.length})
+                </button>
+              </div>
+              <button
+                onClick={() => setSelectedEmployees(selectedEmployees.length === employees.length ? [] : employees.map(emp => emp.id))}
+                className="text-sm text-primary hover:text-primary-dark"
+              >
+                {selectedEmployees.length === employees.length ? 'Deselect All' : 'Select All'}
+              </button>
+            </div>
+            
+            {/* Employee List for Attendance Marking */}
+            <div className="grid gap-3">
+              {employees.map((employee) => {
+                const todayStatus = getTodayAttendanceStatus(employee.id)
+                const isSelected = selectedEmployees.includes(employee.id)
+                
+                return (
+                  <div
+                    key={employee.id}
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border transition-all duration-300 ${
+                      isSelected 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleEmployeeSelection(employee.id)}
+                        className="w-4 h-4 text-primary border-surface-300 rounded focus:ring-primary"
+                      />
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                        {employee.firstName[0]}{employee.lastName[0]}
+                      </div>
+                      <div>
+                        <div className="font-medium text-surface-900 dark:text-white">
+                          {employee.firstName} {employee.lastName}
+                        </div>
+                        <div className="text-sm text-surface-600 dark:text-surface-300">
+                          {employee.department}
+                        </div>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        todayStatus === 'Present' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                        todayStatus === 'Absent' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                        todayStatus === 'Late' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                        'bg-surface-100 text-surface-600 dark:bg-surface-700 dark:text-surface-400'
+                      }`}>
+                        {todayStatus}
+                      </span>
+                    </div>
+                    
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => markIndividualAttendance(employee.id, 'Present')}
+                        className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors"
+                      >
+                        Present
+                      </button>
+                      <button
+                        onClick={() => markIndividualAttendance(employee.id, 'Late')}
+                        className="px-3 py-1 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition-colors"
+                      >
+                        Late
+                      </button>
+                      <button
+                        onClick={() => markIndividualAttendance(employee.id, 'Absent')}
+                        className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors"
+                      >
+                        Absent
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      <h4 className="text-md font-semibold text-surface-900 dark:text-white mb-4">
+        Attendance Records
       </h3>
       <div className="grid gap-4">
         {attendance.map((record, index) => {
