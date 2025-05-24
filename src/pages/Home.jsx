@@ -1,10 +1,12 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import MainFeature from '../components/MainFeature'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import ApperIcon from '../components/ApperIcon'
 
 const Home = () => {
+  const navigate = useNavigate()
+
   const stats = [
     { label: "Active Employees", value: "1,247", icon: "Users", color: "text-primary" },
     { label: "Projects Running", value: "89", icon: "Briefcase", color: "text-secondary" },
@@ -19,6 +21,12 @@ const Home = () => {
     { label: "Departments", icon: "Building2", color: "bg-blue-500", path: "/departments" },
     { label: "Analytics Dashboard", icon: "BarChart3", color: "bg-purple-500", path: "/analytics" }
   ]
+
+  const handleStatClick = (path) => {
+    if (path) {
+      navigate(path)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-surface-50 via-white to-surface-100 dark:from-surface-900 dark:via-surface-800 dark:to-surface-900">
@@ -68,7 +76,7 @@ const Home = () => {
                 className={`bg-white/80 dark:bg-surface-800/80 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-surface-200/50 dark:border-surface-700/50 hover:shadow-card transition-all duration-300 group ${
                   stat.path ? 'cursor-pointer' : ''
                 }`}
-                onClick={() => stat.path && window.location.href = stat.path}
+                onClick={() => handleStatClick(stat.path)}
               >
                 <div className="flex items-center justify-between mb-2">
                   <ApperIcon 
