@@ -1,6 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import MainFeature from '../components/MainFeature'
+import { Link } from 'react-router-dom'
 import ApperIcon from '../components/ApperIcon'
 
 const Home = () => {
@@ -12,10 +13,10 @@ const Home = () => {
   ]
 
   const quickActions = [
-    { label: "Add Employee", icon: "UserPlus", color: "bg-primary" },
-    { label: "Mark Attendance", icon: "Clock", color: "bg-secondary" },
-    { label: "Assign Project", icon: "FolderPlus", color: "bg-accent" },
-    { label: "Performance Review", icon: "BarChart3", color: "bg-purple-500" }
+    { label: "Add Employee", icon: "UserPlus", color: "bg-primary", path: "/" },
+    { label: "Mark Attendance", icon: "Clock", color: "bg-secondary", path: "/" },
+    { label: "Assign Project", icon: "FolderPlus", color: "bg-accent", path: "/" },
+    { label: "Analytics Dashboard", icon: "BarChart3", color: "bg-purple-500", path: "/analytics" }
   ]
 
   return (
@@ -93,21 +94,26 @@ const Home = () => {
             </h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
               {quickActions.map((action, index) => (
-                <motion.button
+                <motion.div
                   key={action.label}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.6, delay: 0.1 * index }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className={`${action.color} text-white rounded-xl p-4 lg:p-6 shadow-soft hover:shadow-card transition-all duration-300 group`}
                 >
-                  <ApperIcon 
-                    name={action.icon} 
-                    className="h-6 w-6 lg:h-8 lg:w-8 mx-auto mb-2 lg:mb-3 group-hover:scale-110 transition-transform duration-300" 
-                  />
-                  <div className="text-sm lg:text-base font-medium">{action.label}</div>
-                </motion.button>
+                  <Link to={action.path}>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className={`${action.color} text-white rounded-xl p-4 lg:p-6 shadow-soft hover:shadow-card transition-all duration-300 group w-full`}
+                    >
+                      <ApperIcon 
+                        name={action.icon} 
+                        className="h-6 w-6 lg:h-8 lg:w-8 mx-auto mb-2 lg:mb-3 group-hover:scale-110 transition-transform duration-300" 
+                      />
+                      <div className="text-sm lg:text-base font-medium">{action.label}</div>
+                    </motion.button>
+                  </Link>
+                </motion.div>
               ))}
             </div>
           </motion.div>

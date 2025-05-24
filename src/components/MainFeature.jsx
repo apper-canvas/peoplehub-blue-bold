@@ -89,7 +89,8 @@ const MainFeature = () => {
       ...formData,
       [e.target.name]: e.target.value
     })
-  }
+    { id: 'attendance', label: 'Attendance', icon: 'Clock', count: attendance.length },
+    { id: 'performance', label: 'Performance', icon: 'BarChart3', count: performanceReviews.length }
 
   const handleAddEmployee = (e) => {
     e.preventDefault()
@@ -149,6 +150,20 @@ const MainFeature = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h3 className="text-lg lg:text-xl font-semibold text-surface-900 dark:text-white">
           Employee Management
+  const getEmployeePerformanceAvg = (employeeId) => {
+    const reviews = performanceReviews.filter(r => r.employeeId === employeeId)
+    if (reviews.length === 0) return 'N/A'
+    const avg = reviews.reduce((sum, review) => sum + review.score, 0) / reviews.length
+    return avg.toFixed(1)
+  }
+
+  const getProjectCompletionRate = () => {
+    if (projects.length === 0) return 0
+    const totalProgress = projects.reduce((sum, project) => sum + project.progress, 0)
+    return (totalProgress / projects.length).toFixed(1)
+  }
+
+  // Export analytics data for dashboard
         </h3>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
@@ -291,6 +306,9 @@ const MainFeature = () => {
                   <ApperIcon name="Clock" className="h-4 w-4 mr-1" />
                   Mark Attendance
                 </button>
+                <div className="text-xs text-surface-500 dark:text-surface-400">
+                  Avg Score: {getEmployeePerformanceAvg(employee.id)}
+                </div>
               </div>
             </div>
           </motion.div>
@@ -337,6 +355,9 @@ const MainFeature = () => {
                 </div>
                 <div className="text-surface-600 dark:text-surface-300 text-sm">
                   {project.assignedEmployees.length} employee(s) assigned
+                </div>
+                <div className="text-surface-500 dark:text-surface-400 text-sm">
+                  Progress: {project.progress}%
                 </div>
               </div>
               <div className="flex items-center space-x-2">
@@ -408,6 +429,53 @@ const MainFeature = () => {
   )
 
   return (
+  const renderPerformance = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-4"
+    >
+      <h3 className="text-lg lg:text-xl font-semibold text-surface-900 dark:text-white mb-6">
+        Performance Reviews
+      </h3>
+      <div className="grid gap-4">
+        {performanceReviews.map((review, index) => {
+          const employee = employees.find(emp => emp.id === review.employeeId)
+          return (
+            <motion.div
+              key={review.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="bg-white/80 dark:bg-surface-800/80 backdrop-blur-sm rounded-xl p-4 lg:p-6 border border-surface-200/50 dark:border-surface-700/50 hover:shadow-card transition-all duration-300"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <ApperIcon name="BarChart3" className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-semibold text-surface-900 dark:text-white">
+                      {employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown Employee'}
+                    </h4>
+                    <p className="text-surface-600 dark:text-surface-300 text-sm">
+                      {review.quarter} • {format(new Date(review.reviewDate), 'MMM dd, yyyy')}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{review.score}</div>
+                  <div className="text-surface-600 dark:text-surface-300 text-sm">{review.goals}</div>
+                </div>
+              </div>
+            </motion.div>
+          )
+        })}
+      </div>
+    </motion.div>
+  )
+
     <div className="bg-white/30 dark:bg-surface-800/30 backdrop-blur-lg rounded-3xl border border-surface-200/50 dark:border-surface-700/50 overflow-hidden shadow-neu-light dark:shadow-neu-dark">
       {/* Tab Navigation */}
       <div className="border-b border-surface-200/50 dark:border-surface-700/50 bg-white/50 dark:bg-surface-800/50">
@@ -445,3 +513,4 @@ const MainFeature = () => {
 }
 
 export default MainFeature
+          {activeTab === 'performance' && renderPerformance()}
