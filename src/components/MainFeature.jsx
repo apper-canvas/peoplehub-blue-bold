@@ -54,17 +54,18 @@ const MainFeature = () => {
 
   // Load initial data
   useEffect(() => {
+    // Load all initial data when component mounts
     loadEmployees()
     loadProjects()
     loadAttendance()
     loadPerformanceReviews()
-  }, [])
+  }, []) // No dependencies needed as this should only run once on mount
 
   const loadEmployees = async () => {
     try {
       setEmployeesLoading(true)
       const data = await employeeService.fetchEmployees()
-      setEmployees(data)
+      setEmployees(data || [])
     } catch (error) {
       console.error('Error loading employees:', error)
       toast.error('Failed to load employees')
@@ -82,15 +83,15 @@ const MainFeature = () => {
       ])
       
       // Map assignments to projects
-      const projectsWithAssignments = projectsData.map(project => ({
+      const projectsWithAssignments = (projectsData || []).map(project => ({
         ...project,
-        assignedEmployees: assignmentsData
-          .filter(assignment => assignment.projectId === project.Id)
-          .map(assignment => assignment.employeeId)
+        assignedEmployees: (assignmentsData || [])
+          .filter(assignment => assignment?.projectId === project?.Id)
+          .map(assignment => assignment?.employeeId)
       }))
       
       setProjects(projectsWithAssignments)
-      setProjectAssignments(assignmentsData)
+      setProjectAssignments(assignmentsData || [])
     } catch (error) {
       console.error('Error loading projects:', error)
       toast.error('Failed to load projects')
@@ -103,7 +104,7 @@ const MainFeature = () => {
     try {
       setAttendanceLoading(true)
       const data = await attendanceService.fetchAttendance()
-      setAttendance(data)
+      setAttendance(data || [])
     } catch (error) {
       console.error('Error loading attendance:', error)
       toast.error('Failed to load attendance records')
@@ -116,7 +117,7 @@ const MainFeature = () => {
     try {
       setPerformanceLoading(true)
       const data = await performanceService.fetchPerformanceReviews()
-      setPerformanceReviews(data)
+      setPerformanceReviews(data || [])
     } catch (error) {
       console.error('Error loading performance reviews:', error)
       toast.error('Failed to load performance reviews')
@@ -126,10 +127,10 @@ const MainFeature = () => {
   }
 
   const tabs = [
-    { id: 'employees', label: 'Employees', icon: 'Users', count: employees.length },
-    { id: 'projects', label: 'Projects', icon: 'Briefcase', count: projects.length },
-    { id: 'attendance', label: 'Attendance', icon: 'Clock', count: attendance.length },
-    { id: 'performance', label: 'Performance', icon: 'BarChart3', count: performanceReviews.length }
+    { id: 'employees', label: 'Employees', icon: 'Users', count: employees?.length || 0 },
+    { id: 'projects', label: 'Projects', icon: 'Briefcase', count: projects?.length || 0 },
+    { id: 'attendance', label: 'Attendance', icon: 'Clock', count: attendance?.length || 0 },
+    { id: 'performance', label: 'Performance', icon: 'BarChart3', count: performanceReviews?.length || 0 }
   ]
 
   const departments = ['Engineering', 'Design', 'Marketing', 'Sales', 'HR', 'Finance']
@@ -157,7 +158,7 @@ const MainFeature = () => {
       }
       
       const newEmployee = await employeeService.createEmployee(employeeData)
-      setEmployees([...employees, newEmployee])
+      setEmployees(prev => [...(prev || []), newEmployee])
       
       setFormData({
         firstName: '',
@@ -200,7 +201,7 @@ const MainFeature = () => {
       }
       
       const newProject = await projectService.createProject(projectData)
-      setProjects([...projects, { ...newProject, assignedEmployees: [] }])
+      setProjects(prev => [...(prev || []), { ...newProject, assignedEmployees: [] }])
       
       setProjectFormData({ Name: '', status: 'Planning', endDate: '', description: '' })
       setShowAddProjectForm(false)
@@ -224,8 +225,8 @@ const MainFeature = () => {
       const today = format(new Date(), 'yyyy-MM-dd')
       const currentTime = format(new Date(), 'HH:mm')
       
-      const attendancePromises = selectedEmployees.map(async (employeeId) => {
-        const existingRecord = attendance.find(a => a.employeeId === employeeId && a.date === today)
+      const attendancePromises = (selectedEmployees || []).map(async (employeeId) => {
+        const existingRecord = (attendance || []).find(a => a?.employeeId === employeeId && a?.date === today)
         
         const attendanceData = {
           employeeId,
@@ -272,7 +273,7 @@ const MainFeature = () => {
     try {
       const today = format(new Date(), 'yyyy-MM-dd')
       const currentTime = format(new Date(), 'HH:mm')
-      const existingRecord = attendance.find(a => a.employeeId === employeeId && a.date === today)
+      const existingRecord = (attendance || []).find(a => a?.employeeId === employeeId && a?.date === today)
       
       const attendanceData = {
         employeeId,
@@ -294,7 +295,7 @@ const MainFeature = () => {
       
       await loadAttendance() // Reload attendance data
       
-      const employee = employees.find(emp => emp.Id === employeeId)
+      const employee = (employees || []).find(emp => emp?.Id === employeeId)
       toast.success(`${employee?.firstName} ${employee?.lastName} marked as ${status}`)
     } catch (error) {
       console.error('Error marking individual attendance:', error)
@@ -303,9 +304,9 @@ const MainFeature = () => {
   }
 
   const getEmployeePerformanceAvg = (employeeId) => {
-    const reviews = performanceReviews.filter(r => r.employeeId === employeeId)
-    if (reviews.length === 0) return 'N/A'
-    const avg = reviews.reduce((sum, review) => sum + review.score, 0) / reviews.length
+    const reviews = (performanceReviews || []).filter(r => r?.employeeId === employeeId)
+    if (!reviews || reviews.length === 0) return 'N/A'
+    const avg = reviews.reduce((sum, review) => sum + (review?.score || 0), 0) / reviews.length
     return avg.toFixed(1)
   }
 
@@ -319,10 +320,10 @@ const MainFeature = () => {
     try {
       const today = format(new Date(), 'yyyy-MM-dd')
       const currentTime = format(new Date(), 'HH:mm')
-      const existingRecord = attendance.find(a => a.employeeId === employeeId && a.date === today)
+      const existingRecord = (attendance || []).find(a => a?.employeeId === employeeId && a?.date === today)
       
       if (existingRecord) {
-        if (existingRecord.checkOut) {
+        if (existingRecord?.checkOut) {
           // Already signed out, create new sign-in record
           const attendanceData = {
             employeeId,
@@ -363,23 +364,23 @@ const MainFeature = () => {
 
   const getEmployeeAttendanceStatus = (employeeId) => {
     const today = format(new Date(), 'yyyy-MM-dd')
-    const todayRecords = attendance.filter(a => a.employeeId === employeeId && a.date === today)
+    const todayRecords = (attendance || []).filter(a => a?.employeeId === employeeId && a?.date === today)
     
-    if (todayRecords.length === 0) return { isSignedIn: false, signInTime: null }
+    if (!todayRecords || todayRecords.length === 0) return { isSignedIn: false, signInTime: null }
     
-    const latestRecord = todayRecords[todayRecords.length - 1]
+    const latestRecord = todayRecords?.[todayRecords.length - 1]
     return {
-      isSignedIn: !latestRecord.checkOut,
-      signInTime: latestRecord.checkIn
+      isSignedIn: !latestRecord?.checkOut,
+      signInTime: latestRecord?.checkIn
     }
   }
 
   const getTodayAttendanceStatus = (employeeId) => {
     const today = format(new Date(), 'yyyy-MM-dd')
-    const todayRecord = attendance.find(a => a.employeeId === employeeId && a.date === today)
+    const todayRecord = (attendance || []).find(a => a?.employeeId === employeeId && a?.date === today)
     
     if (!todayRecord) return 'Not Marked'
-    return todayRecord.status
+    return todayRecord?.status || 'Not Marked'
   }
 
   const calculateTotalHours = (checkIn, checkOut) => {
@@ -400,7 +401,7 @@ const MainFeature = () => {
   }
 
   const handleAssignProject = (projectId) => {
-    const project = projects.find(p => p.Id === projectId)
+    const project = (projects || []).find(p => p?.Id === projectId)
     setSelectedProjectForAssignment(project)
     setShowProjectAssignment(true)
   }
@@ -418,9 +419,9 @@ const MainFeature = () => {
       )
       
       // Update local state
-      const updatedProjects = projects.map(project => 
-        project.Id === selectedProjectForAssignment.Id 
-          ? { ...project, assignedEmployees: selectedEmployees }
+      const updatedProjects = (projects || []).map(project => 
+        project?.Id === selectedProjectForAssignment?.Id 
+          ? { ...project, assignedEmployees: selectedEmployees || [] }
           : project
       )
       
@@ -449,7 +450,7 @@ const MainFeature = () => {
 
   const initializeProjectAssignment = (project) => {
     setSelectedProjectForAssignment(project)
-    setSelectedEmployees(project.assignedEmployees || [])
+    setSelectedEmployees(project?.assignedEmployees || [])
     setShowProjectAssignment(true)
   }
 
@@ -459,7 +460,7 @@ const MainFeature = () => {
     setSelectedEmployees([])
   }
 
-  if (employeesLoading && projects.length === 0) {
+  if (employeesLoading && (!projects || projects.length === 0)) {
     return (
       <div className="bg-white/30 dark:bg-surface-800/30 backdrop-blur-lg rounded-3xl border border-surface-200/50 dark:border-surface-700/50 overflow-hidden shadow-neu-light dark:shadow-neu-dark">
         <div className="p-8 text-center">
@@ -581,7 +582,7 @@ const MainFeature = () => {
       </AnimatePresence>
 
       <div className="grid gap-4">
-        {employees.map((employee, index) => (
+        {(employees || []).map((employee, index) => (
           <motion.div
             key={employee.Id}
             initial={{ opacity: 0, x: -20 }}
@@ -750,7 +751,7 @@ const MainFeature = () => {
       </AnimatePresence>
 
       <div className="grid gap-4">
-        {projects.map((project, index) => (
+        {(projects || []).map((project, index) => (
           <motion.div
             key={project.Id}
             initial={{ opacity: 0, x: -20 }}
@@ -772,7 +773,7 @@ const MainFeature = () => {
                     {project.status}
                   </span>
                   <span className="text-surface-500 dark:text-surface-400 text-sm">
-                    Due: {project.endDate ? format(new Date(project.endDate), 'MMM dd, yyyy') : 'No deadline'}
+                    Due: {project?.endDate ? format(new Date(project.endDate), 'MMM dd, yyyy') : 'No deadline'}
                   </span>
                 </div>
                 <div className="text-surface-600 dark:text-surface-300 text-sm">
@@ -791,8 +792,8 @@ const MainFeature = () => {
                   <ApperIcon name="UserPlus" className="h-4 w-4 mr-1" />
                   Assign Employees
                 </button>
-                {project.assignedEmployees?.map(empId => {
-                  const emp = employees.find(e => e.Id === empId)
+                {(project?.assignedEmployees || []).map(empId => {
+                  const emp = (employees || []).find(e => e?.Id === empId)
                   return emp ? (
                     <div key={empId} className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-xs font-semibold">
                       {emp.firstName?.[0]}{emp.lastName?.[0]}
@@ -836,25 +837,25 @@ const MainFeature = () => {
 
               <div className="space-y-4 mb-6">
                 <h4 className="font-medium text-surface-900 dark:text-white">
-                  Select Employees ({selectedEmployees.length} selected)
+                  Select Employees ({(selectedEmployees || []).length} selected)
                 </h4>
                 <div className="grid gap-3">
-                  {employees.map((employee) => {
-                    const isSelected = selectedEmployees.includes(employee.Id)
+                  {(employees || []).map((employee) => {
+                    const isSelected = (selectedEmployees || []).includes(employee?.Id)
                     return (
                       <div
-                        key={employee.Id}
+                        key={employee?.Id}
                         className={`flex items-center space-x-3 p-3 rounded-lg border transition-all duration-300 cursor-pointer ${
                           isSelected 
                             ? 'border-primary bg-primary/5' 
                             : 'border-surface-200 dark:border-surface-700 hover:border-primary/50'
                         }`}
-                        onClick={() => toggleEmployeeAssignment(employee.Id)}
+                        onClick={() => toggleEmployeeAssignment(employee?.Id)}
                       >
                         <input
                           type="checkbox"
                           checked={isSelected}
-                          onChange={() => toggleEmployeeAssignment(employee.Id)}
+                          onChange={() => toggleEmployeeAssignment(employee?.Id)}
                           className="w-4 h-4 text-primary border-surface-300 rounded focus:ring-primary"
                         />
                         <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-sm font-semibold">
@@ -862,10 +863,10 @@ const MainFeature = () => {
                         </div>
                         <div className="flex-1">
                           <div className="font-medium text-surface-900 dark:text-white">
-                            {employee.firstName} {employee.lastName}
+                            {employee?.firstName} {employee?.lastName}
                           </div>
                           <div className="text-sm text-surface-600 dark:text-surface-300">
-                            {employee.position} • {employee.department}
+                            {employee?.position} • {employee?.department}
                           </div>
                         </div>
                       </div>
@@ -946,29 +947,29 @@ const MainFeature = () => {
                 </select>
                 <button
                   onClick={handleBulkAttendanceMarking}
-                  disabled={selectedEmployees.length === 0 || formSubmitting}
+                  disabled={(selectedEmployees || []).length === 0 || formSubmitting}
                   className="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {formSubmitting ? 'Applying...' : `Apply (${selectedEmployees.length})`}
+                  {formSubmitting ? 'Applying...' : `Apply (${(selectedEmployees || []).length})`}
                 </button>
               </div>
               <button
-                onClick={() => setSelectedEmployees(selectedEmployees.length === employees.length ? [] : employees.map(emp => emp.Id))}
+                onClick={() => setSelectedEmployees((selectedEmployees || []).length === (employees || []).length ? [] : (employees || []).map(emp => emp?.Id))}
                 className="text-sm text-primary hover:text-primary-dark"
               >
-                {selectedEmployees.length === employees.length ? 'Deselect All' : 'Select All'}
+                {(selectedEmployees || []).length === (employees || []).length ? 'Deselect All' : 'Select All'}
               </button>
             </div>
             
             {/* Employee List for Attendance Marking */}
             <div className="grid gap-3">
-              {employees.map((employee) => {
-                const todayStatus = getTodayAttendanceStatus(employee.Id)
-                const isSelected = selectedEmployees.includes(employee.Id)
+              {(employees || []).map((employee) => {
+                const todayStatus = getTodayAttendanceStatus(employee?.Id)
+                const isSelected = (selectedEmployees || []).includes(employee?.Id)
                 
                 return (
                   <div
-                    key={employee.Id}
+                    key={employee?.Id}
                     className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border transition-all duration-300 ${
                       isSelected 
                         ? 'border-primary bg-primary/5' 
@@ -978,7 +979,7 @@ const MainFeature = () => {
                     <div className="flex items-center space-x-3">
                       <input
                         type="checkbox"
-                        checked={isSelected}
+                        onChange={() => handleEmployeeSelection(employee?.Id)}
                         onChange={() => handleEmployeeSelection(employee.Id)}
                         className="w-4 h-4 text-primary border-surface-300 rounded focus:ring-primary"
                       />
@@ -987,10 +988,10 @@ const MainFeature = () => {
                       </div>
                       <div>
                         <div className="font-medium text-surface-900 dark:text-white">
-                          {employee.firstName} {employee.lastName}
+                          {employee?.firstName} {employee?.lastName}
                         </div>
                         <div className="text-sm text-surface-600 dark:text-surface-300">
-                          {employee.department}
+                          {employee?.department}
                         </div>
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -1005,19 +1006,19 @@ const MainFeature = () => {
                     
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => markIndividualAttendance(employee.Id, 'Present')}
+                        onClick={() => markIndividualAttendance(employee?.Id, 'Present')}
                         className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors"
                       >
                         Present
                       </button>
                       <button
-                        onClick={() => markIndividualAttendance(employee.Id, 'Late')}
+                        onClick={() => markIndividualAttendance(employee?.Id, 'Late')}
                         className="px-3 py-1 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition-colors"
                       >
                         Late
                       </button>
                       <button
-                        onClick={() => markIndividualAttendance(employee.Id, 'Absent')}
+                        onClick={() => markIndividualAttendance(employee?.Id, 'Absent')}
                         className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors"
                       >
                         Absent
@@ -1035,11 +1036,11 @@ const MainFeature = () => {
         Attendance Records
       </h4>
       <div className="grid gap-4">
-        {attendance.map((record, index) => {
-          const employee = employees.find(emp => emp.Id === record.employeeId)
+        {(attendance || []).map((record, index) => {
+          const employee = (employees || []).find(emp => emp?.Id === record?.employeeId)
           return (
             <motion.div
-              key={record.Id}
+              key={record?.Id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -1052,25 +1053,25 @@ const MainFeature = () => {
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold text-surface-900 dark:text-white">
-                      {employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown Employee'}
+                      {employee ? `${employee?.firstName} ${employee?.lastName}` : 'Unknown Employee'}
                     </h4>
                     <p className="text-surface-600 dark:text-surface-300 text-sm">
-                      {record.date ? format(new Date(record.date), 'MMM dd, yyyy') : 'No date'}
+                      {record?.date ? format(new Date(record.date), 'MMM dd, yyyy') : 'No date'}
                     </p>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 lg:gap-4">
                   <span className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-full text-xs font-medium">
-                    {record.status}
+                    {record?.status}
                   </span>
                   <div className="text-surface-600 dark:text-surface-300 text-sm space-y-1">
-                    In: {record.checkIn || 'N/A'} {record.checkOut && `• Out: ${record.checkOut}`}
+                    In: {record?.checkIn || 'N/A'} {record?.checkOut && `• Out: ${record.checkOut}`}
                   </div>
                   <div className="text-surface-700 dark:text-surface-200 text-sm font-medium">
                     <span className="text-xs text-surface-500 dark:text-surface-400">Total Hours: </span>
-                    <span className={`${calculateTotalHours(record.checkIn, record.checkOut) === 'In Progress' 
+                    <span className={`${calculateTotalHours(record?.checkIn, record?.checkOut) === 'In Progress' 
                       ? 'text-blue-600 dark:text-blue-400' : 'text-surface-900 dark:text-white'}`}>
-                      {calculateTotalHours(record.checkIn, record.checkOut)}
+                      {calculateTotalHours(record?.checkIn, record?.checkOut)}
                     </span>
                   </div>
                 </div>
@@ -1093,11 +1094,11 @@ const MainFeature = () => {
         Performance Reviews
       </h3>
       <div className="grid gap-4">
-        {performanceReviews.map((review, index) => {
-          const employee = employees.find(emp => emp.Id === review.employeeId)
+        {(performanceReviews || []).map((review, index) => {
+          const employee = (employees || []).find(emp => emp?.Id === review?.employeeId)
           return (
             <motion.div
-              key={review.Id}
+              key={review?.Id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -1110,16 +1111,16 @@ const MainFeature = () => {
                   </div>
                   <div>
                     <h4 className="text-lg font-semibold text-surface-900 dark:text-white">
-                      {employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown Employee'}
+                      {employee ? `${employee?.firstName} ${employee?.lastName}` : 'Unknown Employee'}
                     </h4>
                     <p className="text-surface-600 dark:text-surface-300 text-sm">
-                      {review.quarter} • {review.reviewDate ? format(new Date(review.reviewDate), 'MMM dd, yyyy') : 'No date'}
+                      {review?.quarter} • {review?.reviewDate ? format(new Date(review.reviewDate), 'MMM dd, yyyy') : 'No date'}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{review.score}</div>
-                  <div className="text-surface-600 dark:text-surface-300 text-sm">{review.goals}</div>
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{review?.score}</div>
+                  <div className="text-surface-600 dark:text-surface-300 text-sm">{review?.goals}</div>
                 </div>
               </div>
             </motion.div>
@@ -1147,7 +1148,7 @@ const MainFeature = () => {
               <ApperIcon name={tab.icon} className="h-5 w-5 flex-shrink-0" />
               <span className="text-sm lg:text-base">{tab.label}</span>
               <span className="bg-surface-200 dark:bg-surface-700 text-surface-700 dark:text-surface-300 rounded-full px-2 py-1 text-xs font-semibold">
-                {tab.count}
+                {tab?.count || 0}
               </span>
             </button>
           ))}
