@@ -552,14 +552,11 @@ const MainFeature = () => {
       transition={{ duration: 0.5 }}
       className="space-y-4"
     >
-      <h3 className="text-lg lg:text-xl font-semibold text-surface-900 dark:text-white mb-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <h3 className="text-lg lg:text-xl font-semibold text-surface-900 dark:text-white">
-            Project Management
-          </h3>
-        </div>
-        Project Management
-      </h3>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h3 className="text-lg lg:text-xl font-semibold text-surface-900 dark:text-white">
+          Project Management
+        </h3>
+      </div>
       <div className="grid gap-4">
         {projects.map((project, index) => (
           <motion.div
@@ -613,7 +610,6 @@ const MainFeature = () => {
             </div>
           </motion.div>
         ))}
-      </div>
       </div>
 
       {/* Project Assignment Modal */}
