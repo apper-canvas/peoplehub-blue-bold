@@ -35,6 +35,7 @@ const MainFeature = () => {
       name: 'Mobile App Redesign',
       status: 'In Progress',
       assignedEmployees: ['1', '2'],
+      progress: 75,
       endDate: '2024-12-31'
     },
     {
@@ -42,6 +43,7 @@ const MainFeature = () => {
       name: 'HR Dashboard',
       status: 'Planning',
       assignedEmployees: ['1'],
+      progress: 30,
       endDate: '2024-11-15'
     }
   ])
@@ -65,8 +67,6 @@ const MainFeature = () => {
     }
   ])
 
-  const [formData, setFormData] = useState({
-    firstName: '',
   const [performanceReviews, setPerformanceReviews] = useState([
     {
       id: '1',
@@ -86,6 +86,9 @@ const MainFeature = () => {
     }
   ])
 
+  const [formData, setFormData] = useState({
+    firstName: '',
+
     lastName: '',
     email: '',
     department: '',
@@ -98,10 +101,10 @@ const MainFeature = () => {
   const tabs = [
     { id: 'employees', label: 'Employees', icon: 'Users', count: employees.length },
     { id: 'projects', label: 'Projects', icon: 'Briefcase', count: projects.length },
-    { id: 'attendance', label: 'Attendance', icon: 'Clock', count: attendance.length }
-  ]
     { id: 'attendance', label: 'Attendance', icon: 'Clock', count: attendance.length },
     { id: 'performance', label: 'Performance', icon: 'BarChart3', count: performanceReviews.length }
+  ]
+
   const departments = ['Engineering', 'Design', 'Marketing', 'Sales', 'HR', 'Finance']
 
   const handleInputChange = (e) => {
@@ -109,22 +112,9 @@ const MainFeature = () => {
       ...formData,
       [e.target.name]: e.target.value
     })
-    { id: 'attendance', label: 'Attendance', icon: 'Clock', count: attendance.length },
-    });
   }
 
-  const getEmployeePerformanceAvg = (employeeId) => {
-    const reviews = performanceReviews.filter(r => r.employeeId === employeeId)
-    if (reviews.length === 0) return 'N/A'
-    const avg = reviews.reduce((sum, review) => sum + review.score, 0) / reviews.length
-    return avg.toFixed(1)
-  }
-
-  const getProjectCompletionRate = () => {
-    if (projects.length === 0) return 0
-    const totalProgress = projects.reduce((sum, project) => sum + project.progress, 0)
-    return (totalProgress / projects.length).toFixed(1)
-  }
+  const handleAddEmployee = (e) => {
     e.preventDefault()
     if (!formData.firstName || !formData.lastName || !formData.email) {
       toast.error('Please fill in all required fields')
@@ -148,6 +138,19 @@ const MainFeature = () => {
     })
     setShowAddForm(false)
     toast.success('Employee added successfully!')
+  }
+
+  const getEmployeePerformanceAvg = (employeeId) => {
+    const reviews = performanceReviews.filter(r => r.employeeId === employeeId)
+    if (reviews.length === 0) return 'N/A'
+    const avg = reviews.reduce((sum, review) => sum + review.score, 0) / reviews.length
+    return avg.toFixed(1)
+  }
+
+  const getProjectCompletionRate = () => {
+    if (projects.length === 0) return 0
+    const totalProgress = projects.reduce((sum, project) => sum + project.progress, 0)
+    return (totalProgress / projects.length).toFixed(1)
   }
 
   const handleMarkAttendance = (employeeId) => {
@@ -182,8 +185,8 @@ const MainFeature = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h3 className="text-lg lg:text-xl font-semibold text-surface-900 dark:text-white">
           Employee Management
-  const getEmployeePerformanceAvg = (employeeId) => {
-    const reviews = performanceReviews.filter(r => r.employeeId === employeeId)
+        </h3>
+        <button
           onClick={() => setShowAddForm(!showAddForm)}
           className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 text-sm lg:text-base"
         >
@@ -447,8 +450,8 @@ const MainFeature = () => {
   )
 
   return (
-  const renderPerformance = () => (
       initial={{ opacity: 0, y: 20 }}
+    <motion.div
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       className="space-y-4"
@@ -494,9 +497,9 @@ const MainFeature = () => {
   )
 
     <div className="bg-white/30 dark:bg-surface-800/30 backdrop-blur-lg rounded-3xl border border-surface-200/50 dark:border-surface-700/50 overflow-hidden shadow-neu-light dark:shadow-neu-dark">
+  return (
       {/* Tab Navigation */}
   return (
-      <div className="border-b border-surface-200/50 dark:border-surface-700/50 bg-white/50 dark:bg-surface-800/50">
         <div className="flex overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => (
             <button
@@ -524,12 +527,11 @@ const MainFeature = () => {
           {activeTab === 'employees' && renderEmployees()}
           {activeTab === 'projects' && renderProjects()}
           {activeTab === 'attendance' && renderAttendance()}
+          {activeTab === 'performance' && renderPerformance()}
         </AnimatePresence>
       </div>
-          {activeTab === 'performance' && renderPerformance()}
     </div>
   )
 }
 
 export default MainFeature
-          {activeTab === 'performance' && renderPerformance()}
