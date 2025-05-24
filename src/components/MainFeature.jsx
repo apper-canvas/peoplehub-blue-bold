@@ -97,6 +97,8 @@ const MainFeature = () => {
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [showAttendanceMarking, setShowAttendanceMarking] = useState(false)
+  const [showProjectAssignment, setShowProjectAssignment] = useState(false)
+  const [selectedProjectForAssignment, setSelectedProjectForAssignment] = useState(null)
   const [selectedEmployees, setSelectedEmployees] = useState([])
   const [bulkAttendanceStatus, setBulkAttendanceStatus] = useState('Present')
 
@@ -320,6 +322,50 @@ const MainFeature = () => {
     return `${hours}h ${minutes}m`
   }
 
+  const handleAssignProject = (projectId) => {
+    const project = projects.find(p => p.id === projectId)
+    setSelectedProjectForAssignment(project)
+    setShowProjectAssignment(true)
+  }
+
+  const handleProjectAssignment = () => {
+    if (!selectedProjectForAssignment) return
+    
+    const updatedProjects = projects.map(project => 
+      project.id === selectedProjectForAssignment.id 
+        ? { ...project, assignedEmployees: selectedEmployees }
+        : project
+    )
+    
+    setProjects(updatedProjects)
+    toast.success(`Project "${selectedProjectForAssignment.name}" assignments updated successfully!`)
+    setShowProjectAssignment(false)
+    setSelectedProjectForAssignment(null)
+    setSelectedEmployees([])
+  }
+
+  const toggleEmployeeAssignment = (employeeId) => {
+    if (!selectedProjectForAssignment) return
+    
+    setSelectedEmployees(prev => 
+      prev.includes(employeeId) 
+        ? prev.filter(id => id !== employeeId)
+        : [...prev, employeeId]
+    )
+  }
+
+  const initializeProjectAssignment = (project) => {
+    setSelectedProjectForAssignment(project)
+    setSelectedEmployees(project.assignedEmployees || [])
+    setShowProjectAssignment(true)
+  }
+
+  const closeProjectAssignment = () => {
+    setShowProjectAssignment(false)
+    setSelectedProjectForAssignment(null)
+    setSelectedEmployees([])
+  }
+
   const renderEmployees = () => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -507,6 +553,11 @@ const MainFeature = () => {
       className="space-y-4"
     >
       <h3 className="text-lg lg:text-xl font-semibold text-surface-900 dark:text-white mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <h3 className="text-lg lg:text-xl font-semibold text-surface-900 dark:text-white">
+            Project Management
+          </h3>
+        </div>
         Project Management
       </h3>
       <div className="grid gap-4">
@@ -543,6 +594,13 @@ const MainFeature = () => {
                 </div>
               </div>
               <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => initializeProjectAssignment(project)}
+                  className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 text-sm"
+                >
+                  <ApperIcon name="UserPlus" className="h-4 w-4 mr-1" />
+                  Assign Employees
+                </button>
                 {project.assignedEmployees.map(empId => {
                   const emp = employees.find(e => e.id === empId)
                   return emp ? (
@@ -556,6 +614,95 @@ const MainFeature = () => {
           </motion.div>
         ))}
       </div>
+      </div>
+
+      {/* Project Assignment Modal */}
+      <AnimatePresence>
+        {showProjectAssignment && selectedProjectForAssignment && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={closeProjectAssignment}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-surface-800 rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-semibold text-surface-900 dark:text-white">
+                  Assign Employees to "{selectedProjectForAssignment.name}"
+                </h3>
+                <button
+                  onClick={closeProjectAssignment}
+                  className="text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-200"
+                >
+                  <ApperIcon name="X" className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4 mb-6">
+                <h4 className="font-medium text-surface-900 dark:text-white">
+                  Select Employees ({selectedEmployees.length} selected)
+                </h4>
+                <div className="grid gap-3">
+                  {employees.map((employee) => {
+                    const isSelected = selectedEmployees.includes(employee.id)
+                    return (
+                      <div
+                        key={employee.id}
+                        className={`flex items-center space-x-3 p-3 rounded-lg border transition-all duration-300 cursor-pointer ${
+                          isSelected 
+                            ? 'border-primary bg-primary/5' 
+                            : 'border-surface-200 dark:border-surface-700 hover:border-primary/50'
+                        }`}
+                        onClick={() => toggleEmployeeAssignment(employee.id)}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleEmployeeAssignment(employee.id)}
+                          className="w-4 h-4 text-primary border-surface-300 rounded focus:ring-primary"
+                        />
+                        <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                          {employee.firstName[0]}{employee.lastName[0]}
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-surface-900 dark:text-white">
+                            {employee.firstName} {employee.lastName}
+                          </div>
+                          <div className="text-sm text-surface-600 dark:text-surface-300">
+                            {employee.position} • {employee.department}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={closeProjectAssignment}
+                  className="px-4 py-2 text-surface-600 dark:text-surface-300 hover:text-surface-900 dark:hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleProjectAssignment}
+                  className="px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300"
+                >
+                  Save Assignments
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 
