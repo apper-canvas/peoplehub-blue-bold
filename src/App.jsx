@@ -20,7 +20,6 @@ function AppContent() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const [darkMode, setDarkMode] = useState(false)
-  const [darkMode, setDarkMode] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   
   // Get authentication status with proper error handling
