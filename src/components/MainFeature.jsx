@@ -448,10 +448,9 @@ const MainFeature = () => {
       </div>
     </motion.div>
   )
-
-  return (
-      initial={{ opacity: 0, y: 20 }}
+  const renderPerformance = () => (
     <motion.div
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       className="space-y-4"
@@ -496,9 +495,10 @@ const MainFeature = () => {
     </motion.div>
   )
 
+
     <div className="bg-white/30 dark:bg-surface-800/30 backdrop-blur-lg rounded-3xl border border-surface-200/50 dark:border-surface-700/50 overflow-hidden shadow-neu-light dark:shadow-neu-dark">
-  return (
       {/* Tab Navigation */}
+      <div className="border-b border-surface-200/50 dark:border-surface-700/50">
   return (
         <div className="flex overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => (
