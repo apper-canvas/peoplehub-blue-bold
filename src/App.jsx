@@ -1,6 +1,7 @@
 import React, { useState, useEffect, createContext, Component } from 'react'
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
+import Departments from './pages/Departments'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { setUser, clearUser } from './store/userSlice'
@@ -274,6 +275,7 @@ function AppContent() {
           <Route path="/error" element={<ErrorPage />} />
           <Route path="/" element={<Home />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/departments" element={<Departments />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
 

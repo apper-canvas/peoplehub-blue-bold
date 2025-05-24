@@ -8,7 +8,7 @@ const Home = () => {
   const stats = [
     { label: "Active Employees", value: "1,247", icon: "Users", color: "text-primary" },
     { label: "Projects Running", value: "89", icon: "Briefcase", color: "text-secondary" },
-    { label: "Departments", value: "12", icon: "Building2", color: "text-accent" },
+    { label: "Departments", value: "12", icon: "Building2", color: "text-accent", path: "/departments" },
     { label: "Avg Performance", value: "4.2", icon: "TrendingUp", color: "text-green-500" }
   ]
 
@@ -16,6 +16,7 @@ const Home = () => {
     { label: "Add Employee", icon: "UserPlus", color: "bg-primary", path: "/" },
     { label: "Mark Attendance", icon: "Clock", color: "bg-secondary", path: "/" },
     { label: "Assign Project", icon: "FolderPlus", color: "bg-accent", path: "/" },
+    { label: "Departments", icon: "Building2", color: "bg-blue-500", path: "/departments" },
     { label: "Analytics Dashboard", icon: "BarChart3", color: "bg-purple-500", path: "/analytics" }
   ]
 
@@ -64,13 +65,19 @@ const Home = () => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.6, delay: 0.1 * index }}
-                className="bg-white/80 dark:bg-surface-800/80 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-surface-200/50 dark:border-surface-700/50 hover:shadow-card transition-all duration-300 group"
+                className={`bg-white/80 dark:bg-surface-800/80 backdrop-blur-sm rounded-2xl p-4 lg:p-6 border border-surface-200/50 dark:border-surface-700/50 hover:shadow-card transition-all duration-300 group ${
+                  stat.path ? 'cursor-pointer' : ''
+                }`}
+                onClick={() => stat.path && window.location.href = stat.path}
               >
                 <div className="flex items-center justify-between mb-2">
                   <ApperIcon 
                     name={stat.icon} 
                     className={`h-5 w-5 lg:h-6 lg:w-6 ${stat.color} group-hover:scale-110 transition-transform duration-300`} 
                   />
+                  {stat.path && (
+                    <ApperIcon name="ExternalLink" className="h-4 w-4 text-surface-400 group-hover:text-primary transition-colors duration-300" />
+                  )}
                 </div>
                 <div className="text-2xl lg:text-3xl font-bold text-surface-900 dark:text-white mb-1">
                   {stat.value}
