@@ -695,7 +695,7 @@ const MainFeature = () => {
       
       <h4 className="text-md font-semibold text-surface-900 dark:text-white mb-4">
         Attendance Records
-      </h3>
+      </h4>
       <div className="grid gap-4">
         {attendance.map((record, index) => {
           const employee = employees.find(emp => emp.id === record.employeeId)
