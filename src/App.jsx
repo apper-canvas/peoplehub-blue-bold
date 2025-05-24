@@ -20,6 +20,7 @@ function AppContent() {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   
   // Get authentication status with proper error handling
@@ -98,6 +99,20 @@ function AppContent() {
     })
   }, [navigate, dispatch])
 
+  // Dark mode effect - must be declared before conditional return
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [darkMode])
+
+  // Define toggleDarkMode before conditional return
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode)
+  }
+
   // Authentication methods to share via context
   const authMethods = {
     isInitialized,
@@ -119,18 +134,6 @@ function AppContent() {
       <div className="text-lg">Initializing application...</div>
     </div>
   }
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode)
-  }
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [darkMode])
 
   return (
     <AuthContext.Provider value={authMethods}>
