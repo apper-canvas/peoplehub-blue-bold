@@ -153,26 +153,63 @@ const MainFeature = () => {
     return (totalProgress / projects.length).toFixed(1)
   }
 
-  const handleMarkAttendance = (employeeId) => {
+  const handleAttendanceToggle = (employeeId) => {
     const today = format(new Date(), 'yyyy-MM-dd')
-    const existingRecord = attendance.find(a => a.employeeId === employeeId && a.date === today)
+    const currentTime = format(new Date(), 'HH:mm')
+    const existingRecordIndex = attendance.findIndex(a => a.employeeId === employeeId && a.date === today)
     
-    if (existingRecord) {
-      toast.error('Attendance already marked for today')
-      return
+    if (existingRecordIndex !== -1) {
+      // Employee has a record for today
+      const existingRecord = attendance[existingRecordIndex]
+      
+      if (existingRecord.checkOut) {
+        // Already signed out, create new sign-in record
+        const newAttendance = {
+          id: (attendance.length + 1).toString(),
+          employeeId,
+          date: today,
+          status: 'Present',
+          checkIn: currentTime,
+          checkOut: ''
+        }
+        setAttendance([...attendance, newAttendance])
+        toast.success('Signed in successfully!')
+      } else {
+        // Currently signed in, sign out
+        const updatedAttendance = [...attendance]
+        updatedAttendance[existingRecordIndex] = {
+          ...existingRecord,
+          checkOut: currentTime
+        }
+        setAttendance(updatedAttendance)
+        toast.success('Signed out successfully!')
+      }
+    } else {
+      // No record for today, create new sign-in
+      const newAttendance = {
+        id: (attendance.length + 1).toString(),
+        employeeId,
+        date: today,
+        status: 'Present',
+        checkIn: currentTime,
+        checkOut: ''
+      }
+      setAttendance([...attendance, newAttendance])
+      toast.success('Signed in successfully!')
     }
+  }
 
-    const newAttendance = {
-      id: (attendance.length + 1).toString(),
-      employeeId,
-      date: today,
-      status: 'Present',
-      checkIn: format(new Date(), 'HH:mm'),
-      checkOut: ''
+  const getEmployeeAttendanceStatus = (employeeId) => {
+    const today = format(new Date(), 'yyyy-MM-dd')
+    const todayRecords = attendance.filter(a => a.employeeId === employeeId && a.date === today)
+    
+    if (todayRecords.length === 0) return { isSignedIn: false, signInTime: null }
+    
+    const latestRecord = todayRecords[todayRecords.length - 1]
+    return {
+      isSignedIn: !latestRecord.checkOut,
+      signInTime: latestRecord.checkIn
     }
-
-    setAttendance([...attendance, newAttendance])
-    toast.success('Attendance marked successfully!')
   }
 
   const renderEmployees = () => (
@@ -320,13 +357,29 @@ const MainFeature = () => {
                 }`}>
                   {employee.status}
                 </span>
-                <button
-                  onClick={() => handleMarkAttendance(employee.id)}
-                  className="inline-flex items-center px-3 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-all duration-300 text-sm"
-                >
-                  <ApperIcon name="Clock" className="h-4 w-4 mr-1" />
-                  Mark Attendance
-                </button>
+                {(() => {
+                  const attendanceStatus = getEmployeeAttendanceStatus(employee.id)
+                  return (
+                    <div className="flex flex-col items-center gap-1">
+                      <button
+                        onClick={() => handleAttendanceToggle(employee.id)}
+                        className={`inline-flex items-center px-3 py-2 rounded-lg transition-all duration-300 text-sm ${
+                          attendanceStatus.isSignedIn 
+                            ? 'bg-red-500 hover:bg-red-600 text-white'
+                            : 'bg-secondary hover:bg-secondary-dark text-white'
+                        }`}
+                      >
+                        <ApperIcon name="Clock" className="h-4 w-4 mr-1" />
+                        {attendanceStatus.isSignedIn ? 'Sign Out' : 'Sign In'}
+                      </button>
+                      {attendanceStatus.signInTime && attendanceStatus.isSignedIn && (
+                        <span className="text-xs text-surface-500 dark:text-surface-400">
+                          In at: {attendanceStatus.signInTime}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })()}
                 <div className="text-xs text-surface-500 dark:text-surface-400">
                   Avg Score: {getEmployeePerformanceAvg(employee.id)}
                 </div>
