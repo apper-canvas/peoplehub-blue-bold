@@ -67,6 +67,25 @@ const MainFeature = () => {
 
   const [formData, setFormData] = useState({
     firstName: '',
+  const [performanceReviews, setPerformanceReviews] = useState([
+    {
+      id: '1',
+      employeeId: '1',
+      quarter: 'Q3 2024',
+      score: 4.2,
+      reviewDate: '2024-09-15',
+      goals: 'Improve team collaboration'
+    },
+    {
+      id: '2',
+      employeeId: '2',
+      quarter: 'Q3 2024',
+      score: 4.5,
+      reviewDate: '2024-09-20',
+      goals: 'Lead design system project'
+    }
+  ])
+
     lastName: '',
     email: '',
     department: '',
@@ -81,7 +100,8 @@ const MainFeature = () => {
     { id: 'projects', label: 'Projects', icon: 'Briefcase', count: projects.length },
     { id: 'attendance', label: 'Attendance', icon: 'Clock', count: attendance.length }
   ]
-
+    { id: 'attendance', label: 'Attendance', icon: 'Clock', count: attendance.length },
+    { id: 'performance', label: 'Performance', icon: 'BarChart3', count: performanceReviews.length }
   const departments = ['Engineering', 'Design', 'Marketing', 'Sales', 'HR', 'Finance']
 
   const handleInputChange = (e) => {
@@ -90,9 +110,21 @@ const MainFeature = () => {
       [e.target.name]: e.target.value
     })
     { id: 'attendance', label: 'Attendance', icon: 'Clock', count: attendance.length },
-    { id: 'performance', label: 'Performance', icon: 'BarChart3', count: performanceReviews.length }
+    });
+  }
 
-  const handleAddEmployee = (e) => {
+  const getEmployeePerformanceAvg = (employeeId) => {
+    const reviews = performanceReviews.filter(r => r.employeeId === employeeId)
+    if (reviews.length === 0) return 'N/A'
+    const avg = reviews.reduce((sum, review) => sum + review.score, 0) / reviews.length
+    return avg.toFixed(1)
+  }
+
+  const getProjectCompletionRate = () => {
+    if (projects.length === 0) return 0
+    const totalProgress = projects.reduce((sum, project) => sum + project.progress, 0)
+    return (totalProgress / projects.length).toFixed(1)
+  }
     e.preventDefault()
     if (!formData.firstName || !formData.lastName || !formData.email) {
       toast.error('Please fill in all required fields')
@@ -152,20 +184,6 @@ const MainFeature = () => {
           Employee Management
   const getEmployeePerformanceAvg = (employeeId) => {
     const reviews = performanceReviews.filter(r => r.employeeId === employeeId)
-    if (reviews.length === 0) return 'N/A'
-    const avg = reviews.reduce((sum, review) => sum + review.score, 0) / reviews.length
-    return avg.toFixed(1)
-  }
-
-  const getProjectCompletionRate = () => {
-    if (projects.length === 0) return 0
-    const totalProgress = projects.reduce((sum, project) => sum + project.progress, 0)
-    return (totalProgress / projects.length).toFixed(1)
-  }
-
-  // Export analytics data for dashboard
-        </h3>
-        <button
           onClick={() => setShowAddForm(!showAddForm)}
           className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 text-sm lg:text-base"
         >
@@ -430,7 +448,6 @@ const MainFeature = () => {
 
   return (
   const renderPerformance = () => (
-    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
@@ -478,6 +495,7 @@ const MainFeature = () => {
 
     <div className="bg-white/30 dark:bg-surface-800/30 backdrop-blur-lg rounded-3xl border border-surface-200/50 dark:border-surface-700/50 overflow-hidden shadow-neu-light dark:shadow-neu-dark">
       {/* Tab Navigation */}
+  return (
       <div className="border-b border-surface-200/50 dark:border-surface-700/50 bg-white/50 dark:bg-surface-800/50">
         <div className="flex overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => (
@@ -508,6 +526,7 @@ const MainFeature = () => {
           {activeTab === 'attendance' && renderAttendance()}
         </AnimatePresence>
       </div>
+          {activeTab === 'performance' && renderPerformance()}
     </div>
   )
 }
