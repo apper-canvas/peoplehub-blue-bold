@@ -95,7 +95,15 @@ const MainFeature = () => {
     status: 'Active'
   })
 
+  const [projectFormData, setProjectFormData] = useState({
+    name: '',
+    status: 'Planning',
+    endDate: '',
+    description: ''
+  })
+
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showAddProjectForm, setShowAddProjectForm] = useState(false)
   const [showAttendanceMarking, setShowAttendanceMarking] = useState(false)
   const [showProjectAssignment, setShowProjectAssignment] = useState(false)
   const [selectedProjectForAssignment, setSelectedProjectForAssignment] = useState(null)
@@ -142,6 +150,36 @@ const MainFeature = () => {
     })
     setShowAddForm(false)
     toast.success('Employee added successfully!')
+  }
+
+  const handleProjectInputChange = (e) => {
+    setProjectFormData({
+      ...projectFormData,
+      [e.target.name]: e.target.value
+    })
+  }
+
+  const handleAddProject = (e) => {
+    e.preventDefault()
+    if (!projectFormData.name || !projectFormData.endDate) {
+      toast.error('Please fill in all required fields')
+      return
+    }
+
+    const newProject = {
+      id: (projects.length + 1).toString(),
+      name: projectFormData.name,
+      status: projectFormData.status,
+      assignedEmployees: [],
+      progress: 0,
+      endDate: projectFormData.endDate,
+      description: projectFormData.description
+    }
+
+    setProjects([...projects, newProject])
+    setProjectFormData({ name: '', status: 'Planning', endDate: '', description: '' })
+    setShowAddProjectForm(false)
+    toast.success('Project added successfully!')
   }
 
   const handleBulkAttendanceMarking = () => {
@@ -556,7 +594,92 @@ const MainFeature = () => {
         <h3 className="text-lg lg:text-xl font-semibold text-surface-900 dark:text-white">
           Project Management
         </h3>
+        <button
+          onClick={() => setShowAddProjectForm(!showAddProjectForm)}
+          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 text-sm lg:text-base"
+        >
+          <ApperIcon name="Plus" className="h-4 w-4 mr-2" />
+          Add Project
+        </button>
       </div>
+
+      <AnimatePresence>
+        {showAddProjectForm && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-white/50 dark:bg-surface-800/50 backdrop-blur-sm rounded-xl p-4 lg:p-6 border border-surface-200/50 dark:border-surface-700/50 mb-6"
+          >
+            <form onSubmit={handleAddProject} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                  Project Name *
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={projectFormData.name}
+                  onChange={handleProjectInputChange}
+                  className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-300 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={projectFormData.status}
+                  onChange={handleProjectInputChange}
+                  className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-300 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
+                >
+                  <option value="Planning">Planning</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                  <option value="On Hold">On Hold</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                  End Date *
+                </label>
+                <input
+                  type="date"
+                  name="endDate"
+                  value={projectFormData.endDate}
+                  onChange={handleProjectInputChange}
+                  className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-300 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  value={projectFormData.description}
+                  onChange={handleProjectInputChange}
+                  rows="3"
+                  className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-300 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
+                  placeholder="Project description..."
+                />
+              </div>
+              <div className="md:col-span-2 flex justify-end">
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-gradient-to-r from-secondary to-secondary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300"
+                >
+                  Create Project
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="grid gap-4">
         {projects.map((project, index) => (
           <motion.div
