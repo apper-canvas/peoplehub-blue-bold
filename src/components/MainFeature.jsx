@@ -496,10 +496,10 @@ const MainFeature = () => {
   )
 
 
+  return (
     <div className="bg-white/30 dark:bg-surface-800/30 backdrop-blur-lg rounded-3xl border border-surface-200/50 dark:border-surface-700/50 overflow-hidden shadow-neu-light dark:shadow-neu-dark">
       {/* Tab Navigation */}
       <div className="border-b border-surface-200/50 dark:border-surface-700/50">
-  return (
         <div className="flex overflow-x-auto scrollbar-hide">
           {tabs.map((tab) => (
             <button
