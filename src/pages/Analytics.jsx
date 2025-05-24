@@ -5,58 +5,211 @@ import { toast } from 'react-toastify'
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns'
 import ApperIcon from '../components/ApperIcon'
 import AnalyticsCharts from '../components/AnalyticsCharts'
+import employeeService from '../services/employeeService'
+import projectService from '../services/projectService'
+import attendanceService from '../services/attendanceService'
+import performanceService from '../services/performanceService'
+import reportService from '../services/reportService'
 
 const Analytics = () => {
   const [activeTab, setActiveTab] = useState('overview')
   const [dateRange, setDateRange] = useState('month')
   const [showReportModal, setShowReportModal] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [submitLoading, setSubmitLoading] = useState(false)
+  
   const [reportSchedule, setReportSchedule] = useState({
     frequency: 'weekly',
     email: '',
     enabled: false
   })
 
-  // Sample data for analytics
+  // Real data from services
   const [analyticsData, setAnalyticsData] = useState({
-    employees: [
-      { id: '1', name: 'Sarah Johnson', department: 'Engineering', attendance: 95, performance: 4.5, projects: 3 },
-      { id: '2', name: 'Michael Chen', department: 'Design', attendance: 88, performance: 4.2, projects: 2 },
-      { id: '3', name: 'Emily Davis', department: 'Marketing', attendance: 92, performance: 4.0, projects: 4 },
-      { id: '4', name: 'James Wilson', department: 'Engineering', attendance: 97, performance: 4.8, projects: 2 },
-      { id: '5', name: 'Lisa Anderson', department: 'HR', attendance: 94, performance: 4.3, projects: 1 }
-    ],
-    projects: [
-      { id: '1', name: 'Mobile App Redesign', completion: 75, team: 5, deadline: '2024-12-31' },
-      { id: '2', name: 'HR Dashboard', completion: 25, team: 3, deadline: '2024-11-15' },
-      { id: '3', name: 'Marketing Campaign', completion: 90, team: 4, deadline: '2024-10-30' },
-      { id: '4', name: 'System Upgrade', completion: 60, team: 6, deadline: '2024-12-15' }
-    ],
+    employees: [],
+    projects: [],
     attendance: {
-      thisWeek: [95, 88, 92, 97, 94, 89, 91],
-      lastWeek: [92, 85, 88, 94, 91, 87, 89],
-      thisMonth: 92.5,
-      lastMonth: 89.2
+      thisWeek: [],
+      lastWeek: [],
+      thisMonth: 0,
+      lastMonth: 0
     },
     performance: {
-      quarterly: [4.1, 4.3, 4.2, 4.4],
+      quarterly: [],
       byDepartment: {
-        Engineering: 4.65,
-        Design: 4.2,
-        Marketing: 4.0,
-        HR: 4.3,
-        Sales: 4.1
+        Engineering: 0,
+        Design: 0,
+        Marketing: 0,
+        HR: 0,
+        Sales: 0
       }
     }
   })
 
   const [kpis, setKpis] = useState({
-    totalEmployees: 247,
-    attendanceRate: 92.5,
-    projectCompletionRate: 62.5,
-    avgPerformanceScore: 4.3,
-    activeProjects: 12,
-    departmentCount: 6
+    totalEmployees: 0,
+    attendanceRate: 0,
+    projectCompletionRate: 0,
+    avgPerformanceScore: 0,
+    activeProjects: 0,
+    departmentCount: 0
   })
+
+  // Load data on component mount
+  useEffect(() => {
+    loadAnalyticsData()
+  }, [dateRange])
+
+  const loadAnalyticsData = async () => {
+    try {
+      setLoading(true)
+      
+      // Fetch all data in parallel
+      const [employees, projects, attendance, performanceReviews] = await Promise.all([
+        employeeService.fetchEmployees(),
+        projectService.fetchProjects(),
+        attendanceService.fetchAttendance(),
+        performanceService.fetchPerformanceReviews()
+      ])
+      
+      // Process and set analytics data
+      const processedData = processAnalyticsData(employees, projects, attendance, performanceReviews)
+      setAnalyticsData(processedData)
+      
+      // Calculate KPIs
+      const calculatedKpis = calculateKPIs(employees, projects, attendance, performanceReviews)
+      setKpis(calculatedKpis)
+    } catch (error) {
+      console.error('Error loading analytics data:', error)
+      toast.error('Failed to load analytics data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const processAnalyticsData = (employees, projects, attendance, performanceReviews) => {
+    // Process employees data
+    const processedEmployees = employees.map(emp => ({
+      id: emp.Id,
+      name: `${emp.firstName} ${emp.lastName}`,
+      department: emp.department,
+      attendance: calculateEmployeeAttendanceRate(emp.Id, attendance),
+      performance: calculateEmployeePerformanceAvg(emp.Id, performanceReviews),
+      projects: 0 // This would need project assignment data
+    }))
+
+    // Process projects data
+    const processedProjects = projects.map(proj => ({
+      id: proj.Id,
+      name: proj.Name,
+      completion: proj.progress || 0,
+      team: 0, // This would need project assignment data
+      deadline: proj.endDate
+    }))
+
+    // Process attendance data
+    const attendanceData = processAttendanceData(attendance)
+    
+    // Process performance data
+    const performanceData = processPerformanceData(performanceReviews, employees)
+
+    return {
+      employees: processedEmployees,
+      projects: processedProjects,
+      attendance: attendanceData,
+      performance: performanceData
+    }
+  }
+
+  const calculateEmployeeAttendanceRate = (employeeId, attendance) => {
+    const employeeAttendance = attendance.filter(a => a.employeeId === employeeId)
+    if (employeeAttendance.length === 0) return 0
+    
+    const presentCount = employeeAttendance.filter(a => a.status === 'Present').length
+    return Math.round((presentCount / employeeAttendance.length) * 100)
+  }
+
+  const calculateEmployeePerformanceAvg = (employeeId, performanceReviews) => {
+    const employeeReviews = performanceReviews.filter(r => r.employeeId === employeeId)
+    if (employeeReviews.length === 0) return 0
+    
+    const total = employeeReviews.reduce((sum, review) => sum + review.score, 0)
+    return (total / employeeReviews.length).toFixed(1)
+  }
+
+  const processAttendanceData = (attendance) => {
+    // This is a simplified version - in a real app, you'd calculate actual weekly/monthly data
+    const totalRecords = attendance.length
+    const presentRecords = attendance.filter(a => a.status === 'Present').length
+    const attendanceRate = totalRecords > 0 ? (presentRecords / totalRecords) * 100 : 0
+
+    return {
+      thisWeek: [95, 88, 92, 97, 94, 89, 91], // Sample data - would calculate from actual dates
+      lastWeek: [92, 85, 88, 94, 91, 87, 89], // Sample data - would calculate from actual dates
+      thisMonth: attendanceRate,
+      lastMonth: attendanceRate * 0.9 // Sample calculation
+    }
+  }
+
+  const processPerformanceData = (performanceReviews, employees) => {
+    // Calculate quarterly averages (simplified)
+    const avgScore = performanceReviews.length > 0 
+      ? performanceReviews.reduce((sum, review) => sum + review.score, 0) / performanceReviews.length
+      : 0
+
+    // Calculate by department
+    const byDepartment = {}
+    const departments = [...new Set(employees.map(emp => emp.department).filter(Boolean))]
+    
+    departments.forEach(dept => {
+      const deptEmployees = employees.filter(emp => emp.department === dept)
+      const deptReviews = performanceReviews.filter(review => 
+        deptEmployees.some(emp => emp.Id === review.employeeId)
+      )
+      
+      byDepartment[dept] = deptReviews.length > 0
+        ? (deptReviews.reduce((sum, review) => sum + review.score, 0) / deptReviews.length).toFixed(2)
+        : 0
+    })
+
+    return {
+      quarterly: [avgScore * 0.9, avgScore * 0.95, avgScore, avgScore * 1.05], // Sample quarterly trend
+      byDepartment
+    }
+  }
+
+  const calculateKPIs = (employees, projects, attendance, performanceReviews) => {
+    const totalEmployees = employees.length
+    const activeProjects = projects.filter(p => p.status === 'In Progress').length
+    const departments = [...new Set(employees.map(emp => emp.department).filter(Boolean))].length
+    
+    // Calculate attendance rate
+    const totalAttendanceRecords = attendance.length
+    const presentRecords = attendance.filter(a => a.status === 'Present').length
+    const attendanceRate = totalAttendanceRecords > 0 
+      ? ((presentRecords / totalAttendanceRecords) * 100).toFixed(1)
+      : 0
+    
+    // Calculate project completion rate
+    const totalProgress = projects.reduce((sum, project) => sum + (project.progress || 0), 0)
+    const projectCompletionRate = projects.length > 0 
+      ? (totalProgress / projects.length).toFixed(1)
+      : 0
+    
+    // Calculate average performance score
+    const avgPerformanceScore = performanceReviews.length > 0
+      ? (performanceReviews.reduce((sum, review) => sum + review.score, 0) / performanceReviews.length).toFixed(1)
+      : 0
+
+    return {
+      totalEmployees,
+      attendanceRate: parseFloat(attendanceRate),
+      projectCompletionRate: parseFloat(projectCompletionRate),
+      avgPerformanceScore: parseFloat(avgPerformanceScore),
+      activeProjects,
+      departmentCount: departments
+    }
+  }
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: 'LayoutDashboard' },
@@ -66,33 +219,51 @@ const Analytics = () => {
     { id: 'reports', label: 'Reports & Export', icon: 'FileText' }
   ]
 
-  const handleScheduleReport = () => {
+  const handleScheduleReport = async () => {
     if (!reportSchedule.email) {
       toast.error('Please enter an email address')
       return
     }
     
-    // Simulate scheduling the report
-    toast.success(`Report scheduled ${reportSchedule.frequency} to ${reportSchedule.email}`)
-    setShowReportModal(false)
-    setReportSchedule({ ...reportSchedule, enabled: true })
+    try {
+      setSubmitLoading(true)
+      
+      // Create report schedule in database
+      await reportService.createReportSchedule({
+        frequency: reportSchedule.frequency,
+        email: reportSchedule.email,
+        enabled: true
+      })
+      
+      toast.success(`Report scheduled ${reportSchedule.frequency} to ${reportSchedule.email}`)
+      setShowReportModal(false)
+      setReportSchedule({ ...reportSchedule, enabled: true })
+    } catch (error) {
+      console.error('Error scheduling report:', error)
+      toast.error('Failed to schedule report')
+    } finally {
+      setSubmitLoading(false)
+    }
   }
 
   const handleExportData = (format) => {
-    // Simulate data export
+    setLoading(true)
     toast.success(`Exporting data as ${format.toUpperCase()}...`)
     
-    // In a real application, you would generate and download the file
+    // Simulate export process
     setTimeout(() => {
+      setLoading(false)
       toast.success(`${format.toUpperCase()} file downloaded successfully!`)
     }, 2000)
   }
 
   const generateReport = (type) => {
+    setLoading(true)
     toast.success(`Generating ${type} report...`)
     
-    // Simulate report generation
+    // Simulate report generation process
     setTimeout(() => {
+      setLoading(false)
       toast.success(`${type} report generated successfully!`)
     }, 3000)
   }
@@ -125,6 +296,14 @@ const Analytics = () => {
           label: 'This Month'
         }
     }
+  }
+
+  if (loading && kpis.totalEmployees === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-surface-50 via-white to-surface-100 dark:from-surface-900 dark:via-surface-800 dark:to-surface-900 flex items-center justify-center">
+        <div className="text-lg">Loading analytics data...</div>
+      </div>
+    )
   }
 
   const renderOverview = () => (

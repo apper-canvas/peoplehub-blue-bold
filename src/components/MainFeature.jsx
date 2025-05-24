@@ -3,89 +3,30 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-toastify'
 import ApperIcon from './ApperIcon'
 import { format } from 'date-fns'
+import employeeService from '../services/employeeService'
+import projectService from '../services/projectService'
+import attendanceService from '../services/attendanceService'
+import performanceService from '../services/performanceService'
+import projectAssignmentService from '../services/projectAssignmentService'
 
 const MainFeature = () => {
   const [activeTab, setActiveTab] = useState('employees')
-  const [employees, setEmployees] = useState([
-    {
-      id: '1',
-      firstName: 'Sarah',
-      lastName: 'Johnson',
-      email: 'sarah.j@company.com',
-      department: 'Engineering',
-      position: 'Senior Developer',
-      status: 'Active',
-      hireDate: '2022-03-15'
-    },
-    {
-      id: '2', 
-      firstName: 'Michael',
-      lastName: 'Chen',
-      email: 'michael.c@company.com',
-      department: 'Design',
-      position: 'UI/UX Designer',
-      status: 'Active',
-      hireDate: '2023-01-20'
-    }
-  ])
+  
+  // Data states
+  const [employees, setEmployees] = useState([])
+  const [projects, setProjects] = useState([])
+  const [attendance, setAttendance] = useState([])
+  const [performanceReviews, setPerformanceReviews] = useState([])
+  const [projectAssignments, setProjectAssignments] = useState([])
+  
+  // Loading states
+  const [employeesLoading, setEmployeesLoading] = useState(false)
+  const [projectsLoading, setProjectsLoading] = useState(false)
+  const [attendanceLoading, setAttendanceLoading] = useState(false)
+  const [performanceLoading, setPerformanceLoading] = useState(false)
+  const [formSubmitting, setFormSubmitting] = useState(false)
 
-  const [projects, setProjects] = useState([
-    {
-      id: '1',
-      name: 'Mobile App Redesign',
-      status: 'In Progress',
-      assignedEmployees: ['1', '2'],
-      progress: 75,
-      endDate: '2024-12-31'
-    },
-    {
-      id: '2',
-      name: 'HR Dashboard',
-      status: 'Planning',
-      assignedEmployees: ['1'],
-      progress: 30,
-      endDate: '2024-11-15'
-    }
-  ])
-
-  const [attendance, setAttendance] = useState([
-    {
-      id: '1',
-      employeeId: '1',
-      date: format(new Date(), 'yyyy-MM-dd'),
-      status: 'Present',
-      checkIn: '09:00',
-      checkOut: '17:30'
-    },
-    {
-      id: '2',
-      employeeId: '2', 
-      date: format(new Date(), 'yyyy-MM-dd'),
-      status: 'Present',
-      checkIn: '09:15',
-      checkOut: '17:45'
-    }
-  ])
-
-  const [performanceReviews, setPerformanceReviews] = useState([
-    {
-      id: '1',
-      employeeId: '1',
-      quarter: 'Q3 2024',
-      score: 4.2,
-      reviewDate: '2024-09-15',
-      goals: 'Improve team collaboration'
-    },
-    {
-      id: '2',
-      employeeId: '2',
-      quarter: 'Q3 2024',
-      score: 4.5,
-      reviewDate: '2024-09-20',
-      goals: 'Lead design system project'
-    }
-  ])
-
+  // Form states
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -96,12 +37,13 @@ const MainFeature = () => {
   })
 
   const [projectFormData, setProjectFormData] = useState({
-    name: '',
+    Name: '',
     status: 'Planning',
     endDate: '',
     description: ''
   })
 
+  // Modal states
   const [showAddForm, setShowAddForm] = useState(false)
   const [showAddProjectForm, setShowAddProjectForm] = useState(false)
   const [showAttendanceMarking, setShowAttendanceMarking] = useState(false)
@@ -109,6 +51,79 @@ const MainFeature = () => {
   const [selectedProjectForAssignment, setSelectedProjectForAssignment] = useState(null)
   const [selectedEmployees, setSelectedEmployees] = useState([])
   const [bulkAttendanceStatus, setBulkAttendanceStatus] = useState('Present')
+
+  // Load initial data
+  useEffect(() => {
+    loadEmployees()
+    loadProjects()
+    loadAttendance()
+    loadPerformanceReviews()
+  }, [])
+
+  const loadEmployees = async () => {
+    try {
+      setEmployeesLoading(true)
+      const data = await employeeService.fetchEmployees()
+      setEmployees(data)
+    } catch (error) {
+      console.error('Error loading employees:', error)
+      toast.error('Failed to load employees')
+    } finally {
+      setEmployeesLoading(false)
+    }
+  }
+
+  const loadProjects = async () => {
+    try {
+      setProjectsLoading(true)
+      const [projectsData, assignmentsData] = await Promise.all([
+        projectService.fetchProjects(),
+        projectAssignmentService.fetchProjectAssignments()
+      ])
+      
+      // Map assignments to projects
+      const projectsWithAssignments = projectsData.map(project => ({
+        ...project,
+        assignedEmployees: assignmentsData
+          .filter(assignment => assignment.projectId === project.Id)
+          .map(assignment => assignment.employeeId)
+      }))
+      
+      setProjects(projectsWithAssignments)
+      setProjectAssignments(assignmentsData)
+    } catch (error) {
+      console.error('Error loading projects:', error)
+      toast.error('Failed to load projects')
+    } finally {
+      setProjectsLoading(false)
+    }
+  }
+
+  const loadAttendance = async () => {
+    try {
+      setAttendanceLoading(true)
+      const data = await attendanceService.fetchAttendance()
+      setAttendance(data)
+    } catch (error) {
+      console.error('Error loading attendance:', error)
+      toast.error('Failed to load attendance records')
+    } finally {
+      setAttendanceLoading(false)
+    }
+  }
+
+  const loadPerformanceReviews = async () => {
+    try {
+      setPerformanceLoading(true)
+      const data = await performanceService.fetchPerformanceReviews()
+      setPerformanceReviews(data)
+    } catch (error) {
+      console.error('Error loading performance reviews:', error)
+      toast.error('Failed to load performance reviews')
+    } finally {
+      setPerformanceLoading(false)
+    }
+  }
 
   const tabs = [
     { id: 'employees', label: 'Employees', icon: 'Users', count: employees.length },
@@ -126,30 +141,40 @@ const MainFeature = () => {
     })
   }
 
-  const handleAddEmployee = (e) => {
+  const handleAddEmployee = async (e) => {
     e.preventDefault()
+    
     if (!formData.firstName || !formData.lastName || !formData.email) {
       toast.error('Please fill in all required fields')
       return
     }
 
-    const newEmployee = {
-      id: (employees.length + 1).toString(),
-      ...formData,
-      hireDate: format(new Date(), 'yyyy-MM-dd')
+    try {
+      setFormSubmitting(true)
+      const employeeData = {
+        ...formData,
+        hireDate: format(new Date(), 'yyyy-MM-dd')
+      }
+      
+      const newEmployee = await employeeService.createEmployee(employeeData)
+      setEmployees([...employees, newEmployee])
+      
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        department: '',
+        position: '',
+        status: 'Active'
+      })
+      setShowAddForm(false)
+      toast.success('Employee added successfully!')
+    } catch (error) {
+      console.error('Error creating employee:', error)
+      toast.error('Failed to add employee')
+    } finally {
+      setFormSubmitting(false)
     }
-
-    setEmployees([...employees, newEmployee])
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      department: '',
-      position: '',
-      status: 'Active'
-    })
-    setShowAddForm(false)
-    toast.success('Employee added successfully!')
   }
 
   const handleProjectInputChange = (e) => {
@@ -159,68 +184,80 @@ const MainFeature = () => {
     })
   }
 
-  const handleAddProject = (e) => {
+  const handleAddProject = async (e) => {
     e.preventDefault()
-    if (!projectFormData.name || !projectFormData.endDate) {
+    
+    if (!projectFormData.Name || !projectFormData.endDate) {
       toast.error('Please fill in all required fields')
       return
     }
 
-    const newProject = {
-      id: (projects.length + 1).toString(),
-      name: projectFormData.name,
-      status: projectFormData.status,
-      assignedEmployees: [],
-      progress: 0,
-      endDate: projectFormData.endDate,
-      description: projectFormData.description
+    try {
+      setFormSubmitting(true)
+      const projectData = {
+        ...projectFormData,
+        progress: 0
+      }
+      
+      const newProject = await projectService.createProject(projectData)
+      setProjects([...projects, { ...newProject, assignedEmployees: [] }])
+      
+      setProjectFormData({ Name: '', status: 'Planning', endDate: '', description: '' })
+      setShowAddProjectForm(false)
+      toast.success('Project added successfully!')
+    } catch (error) {
+      console.error('Error creating project:', error)
+      toast.error('Failed to add project')
+    } finally {
+      setFormSubmitting(false)
     }
-
-    setProjects([...projects, newProject])
-    setProjectFormData({ name: '', status: 'Planning', endDate: '', description: '' })
-    setShowAddProjectForm(false)
-    toast.success('Project added successfully!')
   }
 
-  const handleBulkAttendanceMarking = () => {
+  const handleBulkAttendanceMarking = async () => {
     if (selectedEmployees.length === 0) {
       toast.error('Please select at least one employee')
       return
     }
 
-    const today = format(new Date(), 'yyyy-MM-dd')
-    const currentTime = format(new Date(), 'HH:mm')
-    
-    selectedEmployees.forEach(employeeId => {
-      const existingRecordIndex = attendance.findIndex(a => a.employeeId === employeeId && a.date === today)
+    try {
+      setFormSubmitting(true)
+      const today = format(new Date(), 'yyyy-MM-dd')
+      const currentTime = format(new Date(), 'HH:mm')
       
-      if (existingRecordIndex !== -1) {
-        // Update existing record
-        const updatedAttendance = [...attendance]
-        updatedAttendance[existingRecordIndex] = {
-          ...updatedAttendance[existingRecordIndex],
-          status: bulkAttendanceStatus,
-          checkIn: bulkAttendanceStatus !== 'Absent' ? (updatedAttendance[existingRecordIndex].checkIn || currentTime) : '',
-          checkOut: bulkAttendanceStatus === 'Absent' ? '' : updatedAttendance[existingRecordIndex].checkOut
-        }
-        setAttendance(updatedAttendance)
-      } else {
-        // Create new record
-        const newAttendance = {
-          id: (attendance.length + Math.random()).toString(),
+      const attendancePromises = selectedEmployees.map(async (employeeId) => {
+        const existingRecord = attendance.find(a => a.employeeId === employeeId && a.date === today)
+        
+        const attendanceData = {
           employeeId,
           date: today,
           status: bulkAttendanceStatus,
           checkIn: bulkAttendanceStatus !== 'Absent' ? currentTime : '',
           checkOut: ''
         }
-        setAttendance(prev => [...prev, newAttendance])
-      }
-    })
-
-    toast.success(`Marked ${selectedEmployees.length} employee(s) as ${bulkAttendanceStatus}`)
-    setSelectedEmployees([])
-    setShowAttendanceMarking(false)
+        
+        if (existingRecord) {
+          return await attendanceService.updateAttendance(existingRecord.Id, {
+            ...attendanceData,
+            checkIn: bulkAttendanceStatus !== 'Absent' ? (existingRecord.checkIn || currentTime) : '',
+            checkOut: bulkAttendanceStatus === 'Absent' ? '' : existingRecord.checkOut
+          })
+        } else {
+          return await attendanceService.createAttendance(attendanceData)
+        }
+      })
+      
+      await Promise.all(attendancePromises)
+      await loadAttendance() // Reload attendance data
+      
+      toast.success(`Marked ${selectedEmployees.length} employee(s) as ${bulkAttendanceStatus}`)
+      setSelectedEmployees([])
+      setShowAttendanceMarking(false)
+    } catch (error) {
+      console.error('Error marking bulk attendance:', error)
+      toast.error('Failed to mark attendance')
+    } finally {
+      setFormSubmitting(false)
+    }
   }
 
   const handleEmployeeSelection = (employeeId) => {
@@ -231,36 +268,38 @@ const MainFeature = () => {
     )
   }
 
-  const markIndividualAttendance = (employeeId, status) => {
-    const today = format(new Date(), 'yyyy-MM-dd')
-    const currentTime = format(new Date(), 'HH:mm')
-    const existingRecordIndex = attendance.findIndex(a => a.employeeId === employeeId && a.date === today)
-    
-    if (existingRecordIndex !== -1) {
-      // Update existing record
-      const updatedAttendance = [...attendance]
-      updatedAttendance[existingRecordIndex] = {
-        ...updatedAttendance[existingRecordIndex],
-        status: status,
-        checkIn: status !== 'Absent' ? (updatedAttendance[existingRecordIndex].checkIn || currentTime) : '',
-        checkOut: status === 'Absent' ? '' : updatedAttendance[existingRecordIndex].checkOut
-      }
-      setAttendance(updatedAttendance)
-    } else {
-      // Create new record
-      const newAttendance = {
-        id: (attendance.length + Math.random()).toString(),
+  const markIndividualAttendance = async (employeeId, status) => {
+    try {
+      const today = format(new Date(), 'yyyy-MM-dd')
+      const currentTime = format(new Date(), 'HH:mm')
+      const existingRecord = attendance.find(a => a.employeeId === employeeId && a.date === today)
+      
+      const attendanceData = {
         employeeId,
         date: today,
         status: status,
         checkIn: status !== 'Absent' ? currentTime : '',
         checkOut: ''
       }
-      setAttendance(prev => [...prev, newAttendance])
+      
+      if (existingRecord) {
+        await attendanceService.updateAttendance(existingRecord.Id, {
+          ...attendanceData,
+          checkIn: status !== 'Absent' ? (existingRecord.checkIn || currentTime) : '',
+          checkOut: status === 'Absent' ? '' : existingRecord.checkOut
+        })
+      } else {
+        await attendanceService.createAttendance(attendanceData)
+      }
+      
+      await loadAttendance() // Reload attendance data
+      
+      const employee = employees.find(emp => emp.Id === employeeId)
+      toast.success(`${employee?.firstName} ${employee?.lastName} marked as ${status}`)
+    } catch (error) {
+      console.error('Error marking individual attendance:', error)
+      toast.error('Failed to mark attendance')
     }
-
-    const employee = employees.find(emp => emp.id === employeeId)
-    toast.success(`${employee?.firstName} ${employee?.lastName} marked as ${status}`)
   }
 
   const getEmployeePerformanceAvg = (employeeId) => {
@@ -272,53 +311,53 @@ const MainFeature = () => {
 
   const getProjectCompletionRate = () => {
     if (projects.length === 0) return 0
-    const totalProgress = projects.reduce((sum, project) => sum + project.progress, 0)
+    const totalProgress = projects.reduce((sum, project) => sum + (project.progress || 0), 0)
     return (totalProgress / projects.length).toFixed(1)
   }
 
-  const handleAttendanceToggle = (employeeId) => {
-    const today = format(new Date(), 'yyyy-MM-dd')
-    const currentTime = format(new Date(), 'HH:mm')
-    const existingRecordIndex = attendance.findIndex(a => a.employeeId === employeeId && a.date === today)
-    
-    if (existingRecordIndex !== -1) {
-      // Employee has a record for today
-      const existingRecord = attendance[existingRecordIndex]
+  const handleAttendanceToggle = async (employeeId) => {
+    try {
+      const today = format(new Date(), 'yyyy-MM-dd')
+      const currentTime = format(new Date(), 'HH:mm')
+      const existingRecord = attendance.find(a => a.employeeId === employeeId && a.date === today)
       
-      if (existingRecord.checkOut) {
-        // Already signed out, create new sign-in record
-        const newAttendance = {
-          id: (attendance.length + 1).toString(),
+      if (existingRecord) {
+        if (existingRecord.checkOut) {
+          // Already signed out, create new sign-in record
+          const attendanceData = {
+            employeeId,
+            date: today,
+            status: 'Present',
+            checkIn: currentTime,
+            checkOut: ''
+          }
+          await attendanceService.createAttendance(attendanceData)
+          toast.success('Signed in successfully!')
+        } else {
+          // Currently signed in, sign out
+          await attendanceService.updateAttendance(existingRecord.Id, {
+            ...existingRecord,
+            checkOut: currentTime
+          })
+          toast.success('Signed out successfully!')
+        }
+      } else {
+        // No record for today, create new sign-in
+        const attendanceData = {
           employeeId,
           date: today,
           status: 'Present',
           checkIn: currentTime,
           checkOut: ''
         }
-        setAttendance([...attendance, newAttendance])
+        await attendanceService.createAttendance(attendanceData)
         toast.success('Signed in successfully!')
-      } else {
-        // Currently signed in, sign out
-        const updatedAttendance = [...attendance]
-        updatedAttendance[existingRecordIndex] = {
-          ...existingRecord,
-          checkOut: currentTime
-        }
-        setAttendance(updatedAttendance)
-        toast.success('Signed out successfully!')
       }
-    } else {
-      // No record for today, create new sign-in
-      const newAttendance = {
-        id: (attendance.length + 1).toString(),
-        employeeId,
-        date: today,
-        status: 'Present',
-        checkIn: currentTime,
-        checkOut: ''
-      }
-      setAttendance([...attendance, newAttendance])
-      toast.success('Signed in successfully!')
+      
+      await loadAttendance() // Reload attendance data
+    } catch (error) {
+      console.error('Error toggling attendance:', error)
+      toast.error('Failed to update attendance')
     }
   }
 
@@ -361,25 +400,41 @@ const MainFeature = () => {
   }
 
   const handleAssignProject = (projectId) => {
-    const project = projects.find(p => p.id === projectId)
+    const project = projects.find(p => p.Id === projectId)
     setSelectedProjectForAssignment(project)
     setShowProjectAssignment(true)
   }
 
-  const handleProjectAssignment = () => {
+  const handleProjectAssignment = async () => {
     if (!selectedProjectForAssignment) return
     
-    const updatedProjects = projects.map(project => 
-      project.id === selectedProjectForAssignment.id 
-        ? { ...project, assignedEmployees: selectedEmployees }
-        : project
-    )
-    
-    setProjects(updatedProjects)
-    toast.success(`Project "${selectedProjectForAssignment.name}" assignments updated successfully!`)
-    setShowProjectAssignment(false)
-    setSelectedProjectForAssignment(null)
-    setSelectedEmployees([])
+    try {
+      setFormSubmitting(true)
+      
+      // Update project assignments in database
+      await projectAssignmentService.updateProjectAssignments(
+        selectedProjectForAssignment.Id, 
+        selectedEmployees
+      )
+      
+      // Update local state
+      const updatedProjects = projects.map(project => 
+        project.Id === selectedProjectForAssignment.Id 
+          ? { ...project, assignedEmployees: selectedEmployees }
+          : project
+      )
+      
+      setProjects(updatedProjects)
+      toast.success(`Project "${selectedProjectForAssignment.Name}" assignments updated successfully!`)
+      setShowProjectAssignment(false)
+      setSelectedProjectForAssignment(null)
+      setSelectedEmployees([])
+    } catch (error) {
+      console.error('Error updating project assignments:', error)
+      toast.error('Failed to update project assignments')
+    } finally {
+      setFormSubmitting(false)
+    }
   }
 
   const toggleEmployeeAssignment = (employeeId) => {
@@ -404,6 +459,16 @@ const MainFeature = () => {
     setSelectedEmployees([])
   }
 
+  if (employeesLoading && projects.length === 0) {
+    return (
+      <div className="bg-white/30 dark:bg-surface-800/30 backdrop-blur-lg rounded-3xl border border-surface-200/50 dark:border-surface-700/50 overflow-hidden shadow-neu-light dark:shadow-neu-dark">
+        <div className="p-8 text-center">
+          <div className="text-lg">Loading data...</div>
+        </div>
+      </div>
+    )
+  }
+
   const renderEmployees = () => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -417,7 +482,8 @@ const MainFeature = () => {
         </h3>
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 text-sm lg:text-base"
+          disabled={formSubmitting}
+          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 text-sm lg:text-base disabled:opacity-50"
         >
           <ApperIcon name="UserPlus" className="h-4 w-4 mr-2" />
           Add Employee
@@ -503,9 +569,10 @@ const MainFeature = () => {
               <div className="flex items-end">
                 <button
                   type="submit"
-                  className="w-full px-4 py-2 bg-gradient-to-r from-secondary to-secondary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300"
+                  disabled={formSubmitting}
+                  className="w-full px-4 py-2 bg-gradient-to-r from-secondary to-secondary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 disabled:opacity-50"
                 >
-                  Add Employee
+                  {formSubmitting ? 'Adding...' : 'Add Employee'}
                 </button>
               </div>
             </form>
@@ -516,7 +583,7 @@ const MainFeature = () => {
       <div className="grid gap-4">
         {employees.map((employee, index) => (
           <motion.div
-            key={employee.id}
+            key={employee.Id}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -526,7 +593,7 @@ const MainFeature = () => {
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <span className="text-white font-semibold text-lg">
-                    {employee.firstName[0]}{employee.lastName[0]}
+                    {employee.firstName?.[0]}{employee.lastName?.[0]}
                   </span>
                 </div>
                 <div>
@@ -550,11 +617,11 @@ const MainFeature = () => {
                   {employee.status}
                 </span>
                 {(() => {
-                  const attendanceStatus = getEmployeeAttendanceStatus(employee.id)
+                  const attendanceStatus = getEmployeeAttendanceStatus(employee.Id)
                   return (
                     <div className="flex flex-col items-center gap-1">
                       <button
-                        onClick={() => handleAttendanceToggle(employee.id)}
+                        onClick={() => handleAttendanceToggle(employee.Id)}
                         className={`inline-flex items-center px-3 py-2 rounded-lg transition-all duration-300 text-sm ${
                           attendanceStatus.isSignedIn 
                             ? 'bg-red-500 hover:bg-red-600 text-white'
@@ -573,7 +640,7 @@ const MainFeature = () => {
                   )
                 })()}
                 <div className="text-xs text-surface-500 dark:text-surface-400">
-                  Avg Score: {getEmployeePerformanceAvg(employee.id)}
+                  Avg Score: {getEmployeePerformanceAvg(employee.Id)}
                 </div>
               </div>
             </div>
@@ -596,7 +663,8 @@ const MainFeature = () => {
         </h3>
         <button
           onClick={() => setShowAddProjectForm(!showAddProjectForm)}
-          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 text-sm lg:text-base"
+          disabled={formSubmitting}
+          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 text-sm lg:text-base disabled:opacity-50"
         >
           <ApperIcon name="Plus" className="h-4 w-4 mr-2" />
           Add Project
@@ -618,8 +686,8 @@ const MainFeature = () => {
                 </label>
                 <input
                   type="text"
-                  name="name"
-                  value={projectFormData.name}
+                  name="Name"
+                  value={projectFormData.Name}
                   onChange={handleProjectInputChange}
                   className="w-full px-3 py-2 bg-white dark:bg-surface-700 border border-surface-300 dark:border-surface-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300"
                   required
@@ -670,9 +738,10 @@ const MainFeature = () => {
               <div className="md:col-span-2 flex justify-end">
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-gradient-to-r from-secondary to-secondary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300"
+                  disabled={formSubmitting}
+                  className="px-6 py-2 bg-gradient-to-r from-secondary to-secondary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 disabled:opacity-50"
                 >
-                  Create Project
+                  {formSubmitting ? 'Creating...' : 'Create Project'}
                 </button>
               </div>
             </form>
@@ -683,7 +752,7 @@ const MainFeature = () => {
       <div className="grid gap-4">
         {projects.map((project, index) => (
           <motion.div
-            key={project.id}
+            key={project.Id}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -692,7 +761,7 @@ const MainFeature = () => {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
                 <h4 className="text-lg font-semibold text-surface-900 dark:text-white mb-2">
-                  {project.name}
+                  {project.Name}
                 </h4>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -703,29 +772,30 @@ const MainFeature = () => {
                     {project.status}
                   </span>
                   <span className="text-surface-500 dark:text-surface-400 text-sm">
-                    Due: {format(new Date(project.endDate), 'MMM dd, yyyy')}
+                    Due: {project.endDate ? format(new Date(project.endDate), 'MMM dd, yyyy') : 'No deadline'}
                   </span>
                 </div>
                 <div className="text-surface-600 dark:text-surface-300 text-sm">
-                  {project.assignedEmployees.length} employee(s) assigned
+                  {project.assignedEmployees?.length || 0} employee(s) assigned
                 </div>
                 <div className="text-surface-500 dark:text-surface-400 text-sm">
-                  Progress: {project.progress}%
+                  Progress: {project.progress || 0}%
                 </div>
               </div>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => initializeProjectAssignment(project)}
-                  className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 text-sm"
+                  disabled={formSubmitting}
+                  className="inline-flex items-center px-3 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 text-sm disabled:opacity-50"
                 >
                   <ApperIcon name="UserPlus" className="h-4 w-4 mr-1" />
                   Assign Employees
                 </button>
-                {project.assignedEmployees.map(empId => {
-                  const emp = employees.find(e => e.id === empId)
+                {project.assignedEmployees?.map(empId => {
+                  const emp = employees.find(e => e.Id === empId)
                   return emp ? (
                     <div key={empId} className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                      {emp.firstName[0]}{emp.lastName[0]}
+                      {emp.firstName?.[0]}{emp.lastName?.[0]}
                     </div>
                   ) : null
                 })}
@@ -754,7 +824,7 @@ const MainFeature = () => {
             >
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-semibold text-surface-900 dark:text-white">
-                  Assign Employees to "{selectedProjectForAssignment.name}"
+                  Assign Employees to "{selectedProjectForAssignment.Name}"
                 </h3>
                 <button
                   onClick={closeProjectAssignment}
@@ -770,25 +840,25 @@ const MainFeature = () => {
                 </h4>
                 <div className="grid gap-3">
                   {employees.map((employee) => {
-                    const isSelected = selectedEmployees.includes(employee.id)
+                    const isSelected = selectedEmployees.includes(employee.Id)
                     return (
                       <div
-                        key={employee.id}
+                        key={employee.Id}
                         className={`flex items-center space-x-3 p-3 rounded-lg border transition-all duration-300 cursor-pointer ${
                           isSelected 
                             ? 'border-primary bg-primary/5' 
                             : 'border-surface-200 dark:border-surface-700 hover:border-primary/50'
                         }`}
-                        onClick={() => toggleEmployeeAssignment(employee.id)}
+                        onClick={() => toggleEmployeeAssignment(employee.Id)}
                       >
                         <input
                           type="checkbox"
                           checked={isSelected}
-                          onChange={() => toggleEmployeeAssignment(employee.id)}
+                          onChange={() => toggleEmployeeAssignment(employee.Id)}
                           className="w-4 h-4 text-primary border-surface-300 rounded focus:ring-primary"
                         />
                         <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                          {employee.firstName[0]}{employee.lastName[0]}
+                          {employee.firstName?.[0]}{employee.lastName?.[0]}
                         </div>
                         <div className="flex-1">
                           <div className="font-medium text-surface-900 dark:text-white">
@@ -813,9 +883,10 @@ const MainFeature = () => {
                 </button>
                 <button
                   onClick={handleProjectAssignment}
-                  className="px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300"
+                  disabled={formSubmitting}
+                  className="px-4 py-2 bg-gradient-to-r from-primary to-primary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 disabled:opacity-50"
                 >
-                  Save Assignments
+                  {formSubmitting ? 'Saving...' : 'Save Assignments'}
                 </button>
               </div>
             </motion.div>
@@ -838,7 +909,8 @@ const MainFeature = () => {
         </h3>
         <button
           onClick={() => setShowAttendanceMarking(!showAttendanceMarking)}
-          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-secondary to-secondary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 text-sm lg:text-base"
+          disabled={formSubmitting}
+          className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-secondary to-secondary-dark text-white rounded-lg hover:shadow-soft transition-all duration-300 text-sm lg:text-base disabled:opacity-50"
         >
           <ApperIcon name="CheckSquare" className="h-4 w-4 mr-2" />
           Mark Attendance
@@ -874,14 +946,14 @@ const MainFeature = () => {
                 </select>
                 <button
                   onClick={handleBulkAttendanceMarking}
-                  disabled={selectedEmployees.length === 0}
+                  disabled={selectedEmployees.length === 0 || formSubmitting}
                   className="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Apply ({selectedEmployees.length})
+                  {formSubmitting ? 'Applying...' : `Apply (${selectedEmployees.length})`}
                 </button>
               </div>
               <button
-                onClick={() => setSelectedEmployees(selectedEmployees.length === employees.length ? [] : employees.map(emp => emp.id))}
+                onClick={() => setSelectedEmployees(selectedEmployees.length === employees.length ? [] : employees.map(emp => emp.Id))}
                 className="text-sm text-primary hover:text-primary-dark"
               >
                 {selectedEmployees.length === employees.length ? 'Deselect All' : 'Select All'}
@@ -891,12 +963,12 @@ const MainFeature = () => {
             {/* Employee List for Attendance Marking */}
             <div className="grid gap-3">
               {employees.map((employee) => {
-                const todayStatus = getTodayAttendanceStatus(employee.id)
-                const isSelected = selectedEmployees.includes(employee.id)
+                const todayStatus = getTodayAttendanceStatus(employee.Id)
+                const isSelected = selectedEmployees.includes(employee.Id)
                 
                 return (
                   <div
-                    key={employee.id}
+                    key={employee.Id}
                     className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border transition-all duration-300 ${
                       isSelected 
                         ? 'border-primary bg-primary/5' 
@@ -907,11 +979,11 @@ const MainFeature = () => {
                       <input
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => handleEmployeeSelection(employee.id)}
+                        onChange={() => handleEmployeeSelection(employee.Id)}
                         className="w-4 h-4 text-primary border-surface-300 rounded focus:ring-primary"
                       />
                       <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                        {employee.firstName[0]}{employee.lastName[0]}
+                        {employee.firstName?.[0]}{employee.lastName?.[0]}
                       </div>
                       <div>
                         <div className="font-medium text-surface-900 dark:text-white">
@@ -933,19 +1005,19 @@ const MainFeature = () => {
                     
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => markIndividualAttendance(employee.id, 'Present')}
+                        onClick={() => markIndividualAttendance(employee.Id, 'Present')}
                         className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 transition-colors"
                       >
                         Present
                       </button>
                       <button
-                        onClick={() => markIndividualAttendance(employee.id, 'Late')}
+                        onClick={() => markIndividualAttendance(employee.Id, 'Late')}
                         className="px-3 py-1 bg-yellow-500 text-white rounded text-sm hover:bg-yellow-600 transition-colors"
                       >
                         Late
                       </button>
                       <button
-                        onClick={() => markIndividualAttendance(employee.id, 'Absent')}
+                        onClick={() => markIndividualAttendance(employee.Id, 'Absent')}
                         className="px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600 transition-colors"
                       >
                         Absent
@@ -964,10 +1036,10 @@ const MainFeature = () => {
       </h4>
       <div className="grid gap-4">
         {attendance.map((record, index) => {
-          const employee = employees.find(emp => emp.id === record.employeeId)
+          const employee = employees.find(emp => emp.Id === record.employeeId)
           return (
             <motion.div
-              key={record.id}
+              key={record.Id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -983,7 +1055,7 @@ const MainFeature = () => {
                       {employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown Employee'}
                     </h4>
                     <p className="text-surface-600 dark:text-surface-300 text-sm">
-                      {format(new Date(record.date), 'MMM dd, yyyy')}
+                      {record.date ? format(new Date(record.date), 'MMM dd, yyyy') : 'No date'}
                     </p>
                   </div>
                 </div>
@@ -992,7 +1064,7 @@ const MainFeature = () => {
                     {record.status}
                   </span>
                   <div className="text-surface-600 dark:text-surface-300 text-sm space-y-1">
-                    In: {record.checkIn} {record.checkOut && `• Out: ${record.checkOut}`}
+                    In: {record.checkIn || 'N/A'} {record.checkOut && `• Out: ${record.checkOut}`}
                   </div>
                   <div className="text-surface-700 dark:text-surface-200 text-sm font-medium">
                     <span className="text-xs text-surface-500 dark:text-surface-400">Total Hours: </span>
@@ -1009,6 +1081,7 @@ const MainFeature = () => {
       </div>
     </motion.div>
   )
+
   const renderPerformance = () => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -1021,10 +1094,10 @@ const MainFeature = () => {
       </h3>
       <div className="grid gap-4">
         {performanceReviews.map((review, index) => {
-          const employee = employees.find(emp => emp.id === review.employeeId)
+          const employee = employees.find(emp => emp.Id === review.employeeId)
           return (
             <motion.div
-              key={review.id}
+              key={review.Id}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -1040,7 +1113,7 @@ const MainFeature = () => {
                       {employee ? `${employee.firstName} ${employee.lastName}` : 'Unknown Employee'}
                     </h4>
                     <p className="text-surface-600 dark:text-surface-300 text-sm">
-                      {review.quarter} • {format(new Date(review.reviewDate), 'MMM dd, yyyy')}
+                      {review.quarter} • {review.reviewDate ? format(new Date(review.reviewDate), 'MMM dd, yyyy') : 'No date'}
                     </p>
                   </div>
                 </div>
@@ -1055,7 +1128,6 @@ const MainFeature = () => {
       </div>
     </motion.div>
   )
-
 
   return (
     <div className="bg-white/30 dark:bg-surface-800/30 backdrop-blur-lg rounded-3xl border border-surface-200/50 dark:border-surface-700/50 overflow-hidden shadow-neu-light dark:shadow-neu-dark">
